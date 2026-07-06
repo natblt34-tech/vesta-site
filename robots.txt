@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# À la mise en place du domaine définitif, décommenter et adapter :
+# Sitemap: https://VOTRE-DOMAINE/sitemap.xml

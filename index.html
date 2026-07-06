@@ -22,6 +22,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2C13 9 8 11 8 18a8 8 0 0 0 16 0c0-4-2-6-3-9-1 3-2 4-3 5 0-4-1-8-2-12z' fill='%23FF6B35'/%3E%3C/svg%3E">
 
 
+<link rel="preload" href="vestalin_web.glb" as="fetch" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Archivo:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
@@ -501,6 +502,45 @@ main .stage .panel-wide{ max-width:780px }
 /* Transition de page : fondu enchaîné natif (Chrome/Edge), dégradé ailleurs */
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .45s; }
+
+/* ===== Artisanat cinéma ===== */
+/* Grain de film : texture vivante sur tout le site (le produit EST du film) */
+body::after{
+  content:"";position:fixed;inset:-60px;z-index:88;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  opacity:.05;mix-blend-mode:soft-light;
+  animation:grain 1.1s steps(4) infinite;
+}
+@keyframes grain{
+  0%{transform:translate(0,0)}25%{transform:translate(-24px,14px)}
+  50%{transform:translate(16px,-20px)}75%{transform:translate(-12px,-8px)}100%{transform:translate(0,0)}
+}
+/* Vignette optique : concentre le regard vers le foyer */
+body::before{
+  content:"";position:fixed;inset:0;z-index:87;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 42%, transparent 62%, rgba(5,4,3,.5) 100%);
+}
+::selection{background:var(--ember);color:var(--void)}
+::-webkit-scrollbar{width:9px}
+::-webkit-scrollbar-track{background:#0c0a08}
+::-webkit-scrollbar-thumb{background:#2a211a;border-radius:99px;border:2px solid #0c0a08}
+::-webkit-scrollbar-thumb:hover{background:var(--ember)}
+:focus-visible{outline:1.5px solid var(--ember);outline-offset:3px;border-radius:2px}
+.skip-link{position:fixed;top:-4rem;left:1rem;z-index:600;background:var(--ember);color:var(--void);
+  padding:.7rem 1.2rem;border-radius:6px;font:600 .8rem "Archivo";transition:top .25s}
+.skip-link:focus{top:1rem}
+/* Badge de la carte vedette */
+.price-card.is-featured{position:relative}
+.plan-badge{
+  position:absolute;top:-.85rem;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:.6rem;letter-spacing:.22em;white-space:nowrap;
+  color:var(--void);background:linear-gradient(120deg,#FF8A50,var(--ember));
+  padding:.42rem .95rem;border-radius:999px;box-shadow:0 4px 18px rgba(255,107,53,.35);
+}
+.price-anchor{margin-top:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;
+  letter-spacing:.14em;color:var(--ash, #8A8178);opacity:.85}
+.price-anchor b{color:var(--ember);font-weight:400}
+@media (prefers-reduced-motion: reduce){ body::after{animation:none} }
 </style>
 <script type="application/ld+json">
 {
@@ -517,8 +557,23 @@ main .stage .panel-wide{ max-width:780px }
   ]
 }
 </script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "L'IA invente-t-elle des meubles ou des pièces ?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Non. Chaque plan démarre de votre photo, pixel pour pixel : le modèle n'anime que le mouvement de caméra, et chaque film passe une relecture humaine avant livraison."}},
+    {"@type": "Question", "name": "Combien de temps pour recevoir ma vidéo ?",
+     "acceptedAnswer": {"@type": "Answer", "text": "48 heures maximum après l'envoi de vos photos, formats 16:9 pour les portails et vertical pour les réseaux sociaux."}},
+    {"@type": "Question", "name": "Combien ça coûte comparé à un vidéaste ?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Un vidéaste facture 300 à 800 € par bien. Vesta démarre à 0 € (première vidéo offerte), puis 49 €/mois."}}
+  ]
+}
+</script>
 </head>
 <body>
+<a class="skip-link" href="#studio">Aller au studio — créer ma vidéo</a>
 <noscript><p style="padding:2rem;font-family:sans-serif">Vesta est une expérience interactive — activez JavaScript pour découvrir le studio. Contact : la première vidéo est offerte.</p></noscript>
 
 <!-- ============ LOGO — "Le Foyer" : plan du temple rond + flamme éternelle ============ -->
@@ -800,6 +855,7 @@ main .stage .panel-wide{ max-width:780px }
           </article>
 
           <article class="price-card is-featured">
+            <span class="plan-badge">LE CHOIX DES AGENCES</span>
             <p class="plan-flag">Le choix des agents</p>
             <h3 class="plan-name">Flamme</h3>
             <p class="plan-for">Pour l'agent qui publie chaque semaine.</p>
@@ -832,6 +888,7 @@ main .stage .panel-wide{ max-width:780px }
             <a href="#studio" class="btn btn-line btn-block">Parler à l'équipe</a>
           </article>
         </div>
+        <p class="price-anchor">UN VIDÉASTE FACTURE <b>300 À 800 €</b> PAR BIEN, SOUS 2 SEMAINES. VESTA LIVRE EN <b>48 H</b>, EN ILLIMITÉ CRÉATIF.</p>
       </div>
     </div>
   </section>
@@ -897,6 +954,14 @@ main .stage .panel-wide{ max-width:780px }
           <details class="faq-item">
             <summary>Combien de temps pour recevoir un film ?</summary>
             <p>Moins de dix minutes dans la grande majorité des cas. Vous recevez un lien de téléchargement et les déclinaisons de format en une fois.</p>
+          </details>
+        <details class="faq-item">
+            <summary>L'IA invente-t-elle des meubles ou des pièces ?</summary>
+            <p>Non — c'est le cœur de notre méthode. Chaque plan démarre de votre photo, pixel pour pixel : le modèle n'anime que le mouvement de caméra. Les meubles de la photo, rien que les meubles de la photo. Et chaque film passe une relecture humaine avant livraison.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Comment prendre les photos pour un résultat optimal ?</summary>
+            <p>Trois règles suffisent : photographiez chaque pièce depuis son entrée, dans le sens de la visite ; ouvrez les portes des pièces que vous voulez montrer (fermez les autres) ; tenez-vous hors du champ des miroirs. Notre fiche de prise de vue complète est remise à l'inscription — 5 minutes à lire, valable pour tous vos mandats.</p>
           </details>
         </div>
       </div>
