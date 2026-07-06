@@ -171,6 +171,38 @@ body::before{
 ::-webkit-scrollbar-thumb:hover{background:#FF6B35}
 :focus-visible{outline:1.5px solid #FF6B35;outline-offset:3px;border-radius:2px}
 @media (prefers-reduced-motion: reduce){ body::after{animation:none} }
+
+/* ===== La matière brute : photos éparses qui convergent au scroll ===== */
+.photo-field{position:fixed;inset:0;z-index:10;pointer-events:none}
+.pcard{
+  position:absolute;left:50%;top:46%;width:clamp(150px,19vw,264px);
+  transform:translate(-50%,-50%);will-change:transform,opacity;
+  border:1px solid rgba(239,231,216,.22);border-radius:6px;overflow:hidden;
+  box-shadow:0 22px 60px rgba(0,0,0,.55);background:#141009;
+}
+.pcard img{display:block;width:100%;height:auto;filter:saturate(.94) brightness(.96)}
+.pcard span{
+  position:absolute;left:.6rem;bottom:.45rem;font-family:"JetBrains Mono",monospace;
+  font-size:.55rem;letter-spacing:.2em;color:#EFE7D8;opacity:.8;
+  text-shadow:0 1px 6px rgba(0,0,0,.8);
+}
+@media (max-width:720px){.pcard{width:clamp(110px,26vw,170px)}}
+/* ===== Le film final : la récompense ===== */
+.film-cadre{
+  position:relative;max-width:760px;width:min(88vw,760px);margin:2.2rem auto 2.4rem;
+  border-radius:10px;overflow:hidden;border:1px solid rgba(239,231,216,.16);
+  box-shadow:0 30px 90px rgba(0,0,0,.6), 0 0 70px rgba(255,107,53,.08);
+}
+.film-cadre video{display:block;width:100%;height:auto;background:#000}
+.film-chip{
+  position:absolute;top:.85rem;left:.95rem;font-family:"JetBrains Mono",monospace;
+  font-size:.58rem;letter-spacing:.2em;color:#EFE7D8;
+  background:rgba(10,8,6,.55);backdrop-filter:blur(6px);
+  padding:.38rem .65rem;border-radius:4px;border:1px solid rgba(255,107,53,.3);
+}
+.film-chip i{color:#ff3b30;font-style:normal;animation:recblink2 1.6s steps(2) infinite}
+@keyframes recblink2{50%{opacity:.25}}
+@media (prefers-reduced-motion: reduce){.photo-field{display:none}}
 </style>
 </head>
 <body>
@@ -209,9 +241,23 @@ body::before{
 
 <div id="forge"><span id="forgeLabel">ASSEMBLAGE</span><div class="bar"><i id="forgeFill"></i></div><span id="forgePct">0%</span></div>
 
+<div class="photo-field" aria-hidden="true">
+  <div class="pcard"><img src="demo_entree.jpg" alt=""><span>PHOTO 01 — ENTRÉE</span></div>
+  <div class="pcard"><img src="demo_sejour.jpg" alt=""><span>PHOTO 02 — SÉJOUR</span></div>
+  <div class="pcard"><img src="demo_cuisine.jpg" alt=""><span>PHOTO 03 — CUISINE</span></div>
+  <div class="pcard"><img src="demo_chambre.jpg" alt=""><span>PHOTO 04 — CHAMBRE</span></div>
+</div>
 <section id="finale">
   <h2>Vos annonces méritent <em>le feu sacré.</em></h2>
-  <p>La première flamme est offerte : envoyez les photos d'un bien de votre vitrine, jugez sur pièce.</p>
+  <div class="film-cadre" data-cursor="Regarder">
+    <video id="demoFilm" poster="preuve_poster.jpg" muted loop playsinline preload="metadata"
+           aria-label="Film immobilier généré par Vesta à partir des quatre photos">
+      <source src="preuve.mp4" type="video/mp4">
+    </video>
+    <span class="film-chip"><i>●</i>&nbsp;BIEN DE DÉMONSTRATION · PIPELINE RÉEL</span>
+  </div>
+  <p>Ces quatre photos. Ce film. Aucune caméra sur place.<br>
+  La première flamme est offerte : envoyez les photos d'un bien de votre vitrine, jugez sur pièce.</p>
   <a class="btn" href="./#studio">Réclamer ma vidéo offerte</a>
 </section>
 
@@ -755,6 +801,43 @@ function igniteBurst() {
 const forgeFill = document.getElementById("forgeFill");
 const forgePct = document.getElementById("forgePct");
 const forgeLabel = document.getElementById("forgeLabel");
+/* Les photos éparses convergent vers l'œuvre à mesure que q monte */
+const cartes = Array.from(document.querySelectorAll(".pcard"));
+const CFG_CARTES = [
+  { x0: -0.37, y0: -0.27, r0: -9, s0: 1.00, d: 0.00 },
+  { x0:  0.36, y0: -0.30, r0:  7, s0: 0.92, d: 0.05 },
+  { x0: -0.35, y0:  0.25, r0:  6, s0: 0.96, d: 0.10 },
+  { x0:  0.38, y0:  0.27, r0: -7, s0: 0.90, d: 0.15 },
+];
+if (reduceMotion) cartes.forEach((el) => { el.style.display = "none"; });
+function majPhotos(q) {
+  if (reduceMotion || !cartes.length) return;
+  const W = window.innerWidth, H = window.innerHeight;
+  for (let i = 0; i < cartes.length; i++) {
+    const c = CFG_CARTES[i];
+    const t = clamp((q - c.d) / (0.86 - c.d), 0, 1);
+    const e = t * t * (3 - 2 * t);
+    const x = lerp(c.x0 * W, 0, e);
+    const y = lerp(c.y0 * H, -0.05 * H, e);
+    const s = lerp(c.s0, 0.2, e);
+    const r = lerp(c.r0, 0, e);
+    const o = clamp(1 - (q - 0.68) / 0.18, 0, 1);
+    const el = cartes[i];
+    el.style.transform = "translate(-50%,-50%) translate3d(" + x.toFixed(1) + "px," +
+      y.toFixed(1) + "px,0) rotate(" + r.toFixed(2) + "deg) scale(" + s.toFixed(3) + ")";
+    el.style.opacity = o.toFixed(3);
+  }
+}
+const demoFilm = document.getElementById("demoFilm");
+if (demoFilm && "IntersectionObserver" in window) {
+  new IntersectionObserver(function (es) {
+    es.forEach(function (e) {
+      if (e.isIntersecting) { demoFilm.play().catch(function () {}); }
+      else { demoFilm.pause(); }
+    });
+  }, { threshold: 0.35 }).observe(demoFilm);
+}
+
 let last = performance.now(), elapsed = 0, smoothP = 0;
 
 function frame() {
@@ -765,6 +848,7 @@ function frame() {
 
   smoothP = lerp(smoothP, prog.p, 1 - Math.pow(0.002, dt));
   const q = Math.max(smoothP, intro.v);   // l'intro-éclatement prime sur le scroll
+  majPhotos(q);
   setAssembly(q);
 
   /* caméra : orbite lente 3/4 -> face, dolly-in final, micro-parallaxe */
