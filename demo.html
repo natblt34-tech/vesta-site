@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vesta — Démo · De vos photos au film</title>
+<meta name="description" content="Scrollez : les fragments s'assemblent. Vos photos deviennent un film.">
+<!-- === SEO & partage social ================================================
+     À la mise en ligne : remplacer les URL ci-dessous par le domaine réel
+     et déposer une image og.jpg (1200x630) à la racine. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Vesta — Démo · De vos photos au film">
+<meta property="og:description" content="Scrollez : les fragments s'assemblent en une statue, vos photos deviennent un film. La démonstration immersive de Vesta.">
+<meta property="og:image" content="og.jpg">
+<meta property="og:url" content="demo.html">
+<meta property="og:locale" content="fr_FR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Vesta — Démo · De vos photos au film">
+<meta name="twitter:description" content="Scrollez : les fragments s'assemblent en une statue, vos photos deviennent un film. La démonstration immersive de Vesta.">
+<meta name="twitter:image" content="og.jpg">
+<meta name="theme-color" content="#0A0806">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2C13 9 8 11 8 18a8 8 0 0 0 16 0c0-4-2-6-3-9-1 3-2 4-3 5 0-4-1-8-2-12z' fill='%23FF6B35'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0A0806; --bone:#EFE7D8; --ember:#FF6B35; --ash:#8A8178;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:auto}
+body{
+  background:
+    radial-gradient(1100px 760px at 50% 34%, #17110a 0%, rgba(23,17,10,0) 60%),
+    radial-gradient(900px 900px at 14% 82%, #100c08 0%, rgba(16,12,8,0) 55%),
+    var(--void);
+  color:var(--bone);
+  font-family:"Archivo",sans-serif;
+  overflow-x:hidden;
+}
+#world{position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:0}
+
+/* ---- Header minimal ---- */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:40;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:1.2rem clamp(1.2rem,4vw,3rem);
+  mix-blend-mode:difference;
+}
+.logo{font-family:"Fraunces",serif;font-size:1.35rem;letter-spacing:.14em;text-decoration:none;color:var(--bone)}
+header a.back{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--bone);text-decoration:none;opacity:.75;transition:opacity .3s}
+header a.back:hover{opacity:1}
+
+/* ---- La piste de scroll (pilote l'assemblage) ---- */
+#demo-track{height:520vh;position:relative;z-index:1}
+
+/* ---- Légendes de phase ---- */
+.caption{
+  position:fixed;z-index:20;left:clamp(1.4rem,7vw,8rem);top:50%;
+  transform:translateY(-50%);max-width:430px;
+  opacity:0;pointer-events:none;will-change:transform,opacity;
+}
+.caption .num{
+  font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--ember);
+  letter-spacing:.28em;display:block;margin-bottom:1rem;
+}
+.caption h2{
+  font-family:"Fraunces",serif;font-weight:400;font-size:clamp(1.9rem,3.6vw,3rem);
+  line-height:1.12;margin-bottom:1rem;
+}
+.caption h2 em{font-style:italic;color:var(--ember)}
+.caption p{color:var(--ash);font-size:.98rem;line-height:1.65}
+.caption[data-side="right"]{left:auto;right:clamp(1.4rem,7vw,8rem);text-align:right}
+
+/* ---- Finale ---- */
+#finale{
+  position:relative;z-index:2;min-height:92vh;display:flex;
+  flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;gap:1.6rem;padding:4rem 1.5rem;
+  /* voile sombre : le texte flotte dans une zone apaisée, la flamme reste visible autour */
+  background:linear-gradient(180deg,
+    rgba(10,8,6,0) 0%, rgba(10,8,6,.62) 18%,
+    rgba(10,8,6,.82) 45%, rgba(10,8,6,.82) 62%,
+    rgba(10,8,6,.55) 84%, rgba(10,8,6,.88) 100%);
+}
+#finale h2{
+  font-family:"Fraunces",serif;font-weight:300;font-size:clamp(2.1rem,4.4vw,3.6rem);
+  max-width:16ch;line-height:1.12;
+  text-shadow:0 2px 18px rgba(10,8,6,.95), 0 0 52px rgba(10,8,6,.8);
+}
+#finale h2 em{font-style:italic;color:var(--ember);text-shadow:0 2px 18px rgba(10,8,6,.95), 0 0 34px rgba(255,107,53,.45)}
+#finale p{
+  color:#d9d0c2;max-width:44ch;line-height:1.7;
+  text-shadow:0 1px 12px rgba(10,8,6,.95), 0 0 30px rgba(10,8,6,.85);
+}
+.btn{
+  display:inline-block;padding:1rem 2.2rem;border:1px solid var(--ember);
+  border-radius:999px;color:var(--bone);text-decoration:none;
+  font-size:.85rem;letter-spacing:.14em;text-transform:uppercase;
+  background:linear-gradient(120deg, rgba(255,107,53,.16), rgba(255,107,53,.04));
+  transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s;
+}
+.btn:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 8px 40px rgba(255,107,53,.28)}
+
+/* ---- Barre de progression de l'assemblage ---- */
+#forge{
+  position:fixed;left:50%;bottom:1.4rem;transform:translateX(-50%);
+  z-index:30;display:flex;align-items:center;gap:.7rem;
+  font-family:"JetBrains Mono",monospace;font-size:.66rem;letter-spacing:.2em;
+  color:var(--ash);
+}
+#forge .bar{width:150px;height:1px;background:rgba(239,231,216,.16);position:relative}
+#forge .bar i{position:absolute;inset:0;transform-origin:left;transform:scaleX(0);background:var(--ember);box-shadow:0 0 10px rgba(255,107,53,.7)}
+@media (prefers-reduced-motion: reduce){ .caption{transition:none} }
+
+/* ---------- Curseur interactif ---------- */
+html.has-cursor, html.has-cursor *{cursor:none!important}
+#cursor{position:fixed;top:0;left:0;z-index:500;pointer-events:none;display:none}
+html.has-cursor #cursor{display:block}
+.cursor-dot{
+  position:fixed;top:0;left:0;width:5px;height:5px;border-radius:50%;
+  background:var(--ember-hot);transform:translate(-50%,-50%);
+}
+.cursor-ring{
+  position:fixed;top:0;left:0;width:38px;height:38px;border-radius:50%;
+  border:1px solid rgba(239,231,216,.45);display:grid;place-items:center;
+  transition:width .4s var(--ease),height .4s var(--ease),background .4s,border-color .4s;
+}
+.cursor-label{
+  font-family:var(--mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--void);opacity:0;transition:opacity .3s;white-space:nowrap;
+}
+#cursor.is-hover .cursor-ring{width:58px;height:58px;border-color:var(--ember);background:rgba(255,107,53,.08)}
+#cursor.is-label .cursor-ring{width:92px;height:92px;background:var(--ember-hot);border-color:transparent}
+#cursor.is-label .cursor-label{opacity:1}
+#cursor.is-label .cursor-dot{opacity:0}
+/* Curseur lisible sur tout fond */
+.cursor-dot{box-shadow:0 0 0 1.5px rgba(10,8,6,.35), 0 0 12px rgba(255,107,53,.35)}
+.rx-ch{display:inline-block;transform-origin:50% 80%;will-change:transform}
+.rx-w{display:inline-block;white-space:nowrap}
+@media (prefers-reduced-motion: reduce){
+  #cursor{display:none!important}
+  html.has-cursor, html.has-cursor *{cursor:auto!important}
+}
+
+/* Transition de page : fondu enchaîné natif (Chrome/Edge), dégradé ailleurs */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .45s; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="./">VESTA</a>
+  <a class="back" href="./">← Retour au sanctuaire</a>
+</header>
+
+<div id="cursor" aria-hidden="true">
+  <div class="cursor-ring"><span class="cursor-label"></span></div>
+  <div class="cursor-dot"></div>
+</div>
+
+<canvas id="world" aria-hidden="true"></canvas>
+
+<!-- Piste de scroll : sa hauteur = la durée de l'assemblage -->
+<div id="demo-track"></div>
+
+<!-- Légendes de phase (pilotées par GSAP) -->
+<div class="caption" id="cap1">
+  <span class="num">01 — LA MATIÈRE</span>
+  <h2>Vos photos, <em>éparses.</em></h2>
+  <p>Un salon par ici, une façade par là. Des fragments de lumière sans lien — exactement ce que vous nous envoyez.</p>
+</div>
+<div class="caption" data-side="right" id="cap2">
+  <span class="num">02 — LA COMPOSITION</span>
+  <h2>Vesta <em>compose.</em></h2>
+  <p>Chaque fragment trouve sa place. Cadrages, mouvements, lumière : l'IA assemble vos images en plans de cinéma.</p>
+</div>
+<div class="caption" id="cap3">
+  <span class="num">03 — L'ŒUVRE</span>
+  <h2>Un film. <em>Signé.</em></h2>
+  <p>En 48 h, vos photos sont devenues une vidéo de promotion prête pour les portails et les réseaux.</p>
+</div>
+
+<div id="forge"><span id="forgeLabel">ASSEMBLAGE</span><div class="bar"><i id="forgeFill"></i></div><span id="forgePct">0%</span></div>
+
+<section id="finale">
+  <h2>Vos annonces méritent <em>le feu sacré.</em></h2>
+  <p>La première flamme est offerte : envoyez les photos d'un bien de votre vitrine, jugez sur pièce.</p>
+  <a class="btn" href="./#studio">Réclamer ma vidéo offerte</a>
+</section>
+
+<script>
+/* Helpers partagés (portés depuis la page principale) */
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isCoarse = window.matchMedia("(pointer: coarse)").matches;
+window.__vmouse = { x: 0, y: 0, px: 0.5, py: 0.5, vx: 0 };
+
+/* ---- Curseur ---- */
+(function () {
+  if (isCoarse || reduceMotion) return;
+  const c = document.getElementById("cursor");
+  if (!c) return;
+  document.documentElement.classList.add("has-cursor");
+  const ring = c.querySelector(".cursor-ring");
+  const dot = c.querySelector(".cursor-dot");
+  const label = c.querySelector(".cursor-label");
+  const HOVER = "a,button,summary,label,.toggle-opt,input,.faq-item";
+
+  let mx = innerWidth / 2, my = innerHeight / 2;
+  let rx = mx, ry = my, dx = mx, dy = my, lastX = mx;
+
+  window.addEventListener("pointermove", (e) => {
+    window.__vmouse.vx = lerp(window.__vmouse.vx, e.clientX - lastX, 0.3);
+    lastX = e.clientX;
+    mx = e.clientX; my = e.clientY;
+    window.__vmouse.x = mx; window.__vmouse.y = my;
+    window.__vmouse.px = mx / innerWidth; window.__vmouse.py = my / innerHeight;
+    const t = e.target;
+    const lab = t.closest ? t.closest("[data-cursor]") : null;
+    const hov = t.closest ? t.closest(HOVER) : null;
+    c.classList.toggle("is-label", !!lab);
+    if (lab) label.textContent = lab.dataset.cursor;
+    c.classList.toggle("is-hover", !lab && !!hov);
+  }, { passive: true });
+
+  (function loop() {
+    dx = lerp(dx, mx, 0.4); dy = lerp(dy, my, 0.4);
+    rx = lerp(rx, mx, 0.16); ry = lerp(ry, my, 0.16);
+    window.__vmouse.vx = lerp(window.__vmouse.vx, 0, 0.06);
+    dot.style.transform = `translate3d(${dx}px,${dy}px,0) translate(-50%,-50%)`;
+    ring.style.transform = `translate3d(${rx}px,${ry}px,0) translate(-50%,-50%)`;
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* ===== Typographie réactive au curseur (esprit unseen.co, DA braise) ===== */
+(function reactiveType() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (window.matchMedia("(pointer: coarse)").matches) return;
+  const groups = [];
+  const SKIP = new Set(["BUTTON", "A", "INPUT", "SELECT", "TEXTAREA", "SUMMARY", "LABEL", "SVG", "CODE", "IMG", "VIDEO"]);
+  const split = (el, amp) => {
+    if (el.dataset.rxDone) return;
+    if (el.closest("[data-monthly], #timecode, #progressWrap, .waypoints")) return;
+    el.dataset.rxDone = "1";
+    const g = { el, chars: [], amp: amp };
+    const walk = (node) => {
+      Array.from(node.childNodes).forEach((ch) => {
+        if (ch.nodeType === 3) {
+          const frag = document.createDocumentFragment();
+          ch.textContent.split(/(\s+)/).forEach((part) => {
+            if (!part) return;
+            if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+            const word = document.createElement("span");
+            word.className = "rx-w";
+            Array.from(part).forEach((c) => {
+              const sp = document.createElement("span");
+              sp.className = "rx-ch"; sp.textContent = c;
+              word.appendChild(sp);
+              g.chars.push({ sp, x: 0, y: 0, r: 0, w: 0 });
+            });
+            frag.appendChild(word);
+          });
+          node.replaceChild(frag, ch);
+        } else if (ch.nodeType === 1 && !SKIP.has(ch.tagName)) walk(ch);
+      });
+    };
+    walk(el);
+    groups.push(g);
+  };
+  let mx = -9999, my = -9999;
+  window.addEventListener("pointermove", (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
+  const R = 90, MAXD = 8;
+  function loop() {
+    requestAnimationFrame(loop);
+    for (const g of groups) {
+      const rb = g.el.getBoundingClientRect();
+      if (rb.bottom < -60 || rb.top > window.innerHeight + 60) continue;
+      const near = mx > rb.left - R && mx < rb.right + R && my > rb.top - R && my < rb.bottom + R;
+      for (const c of g.chars) {
+        let tx = 0, ty = 0, tr = 0, tw = 0;
+        if (near) {
+          const r = c.sp.getBoundingClientRect();
+          const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+          const dx = cx - mx, dy = cy - my;
+          const d = Math.hypot(dx, dy);
+          if (d < R && d > 0.001) {
+            const f = 1 - d / R, e2 = f * f * f;
+            const A = g.amp || MAXD;
+            tx = (dx / d) * e2 * A;
+            ty = (dy / d) * e2 * A * 0.7;
+            tr = (dx / d) * e2 * 3;
+            tw = e2;
+          }
+        }
+        c.vx = (c.vx || 0) * 0.72 + (tx - c.x) * 0.19;
+        c.vy = (c.vy || 0) * 0.72 + (ty - c.y) * 0.19;
+        c.x += c.vx; c.y += c.vy;
+        c.r += (tr - c.r) * 0.14; c.w += (tw - c.w) * 0.13;
+        if (Math.abs(c.x) + Math.abs(c.y) + Math.abs(c.w) > 0.01) {
+          c.sp.style.transform = "translate(" + c.x.toFixed(2) + "px," + c.y.toFixed(2) + "px) rotate(" + c.r.toFixed(2) + "deg) scale(" + (1 + c.w * 0.05).toFixed(3) + ")";
+          c.sp.style.color = c.w > 0.04 ? "color-mix(in srgb, #FF6B35 " + Math.round(c.w * 52) + "%, currentColor)" : "";
+          c.sp.style.textShadow = c.w > 0.04 ? "0 0 " + (c.w * 13).toFixed(0) + "px rgba(255,107,53," + (c.w * 0.45).toFixed(2) + ")" : "";
+        } else if (c.sp.style.transform) {
+          c.sp.style.transform = ""; c.sp.style.color = ""; c.sp.style.textShadow = "";
+        }
+      }
+    }
+  }
+  const boot = () => {
+    document.querySelectorAll(".caption h2, #finale h2").forEach((el) => split(el, 7));
+    document.querySelectorAll(".caption p, #finale p, .caption .num").forEach((el) => split(el, 3.5));
+    requestAnimationFrame(loop);
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => setTimeout(boot, 1600));
+  } else {
+    setTimeout(boot, 1600);
+  }
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+/* ==========================================================================
+   VESTA — DÉMO. Les fragments s'assemblent au scroll.
+   Le GLB contient l'EXPLOSION (frame 1 = intacte) : on lit le temps à
+   l'envers — progress 0 = éclatée en lévitation, progress 1 = statue.
+   ========================================================================== */
+gsap.registerPlugin(ScrollTrigger);
+
+const canvas = document.getElementById("world");
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isCoarse = window.matchMedia("(pointer: coarse)").matches;
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0806, 0.045);
+const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.1, 60);
+
+/* ---------- Statut de chargement ---------- */
+const vStatus = (() => {
+  const el = document.createElement("div");
+  el.style.cssText = "position:fixed;left:1rem;bottom:3.4rem;z-index:80;font:500 12px/1.4 Archivo,sans-serif;color:#EFE7D8;background:rgba(10,8,6,.72);border:1px solid rgba(255,107,53,.35);border-radius:8px;padding:.5rem .75rem;opacity:0;transition:opacity .3s;pointer-events:none;max-width:70vw";
+  document.body.appendChild(el);
+  let t = null;
+  const show = (m, c) => { el.textContent = m; el.style.borderColor = c; el.style.opacity = "1"; clearTimeout(t); };
+  return {
+    set: (m) => show(m, "rgba(255,107,53,.35)"),
+    ok: (m) => { show(m, "rgba(120,200,120,.5)"); t = setTimeout(() => el.style.opacity = "0", 2600); },
+    err: (m) => show(m, "rgba(220,80,60,.6)"),
+  };
+})();
+
+/* ---------- Éclairage dramatique (portrait 3 points) ---------- */
+scene.add(new THREE.HemisphereLight(0x38322b, 0x0b0806, 0.5));
+
+const key = new THREE.SpotLight(0xffd9b0, 34, 20, 0.55, 0.9, 1.4);
+key.position.set(3.4, 4.6, 3.2);
+key.castShadow = true;
+key.shadow.mapSize.set(1024, 1024);
+key.shadow.bias = -0.0004;
+key.shadow.normalBias = 0.02;
+key.target.position.set(0, 1.1, 0);
+scene.add(key, key.target);
+
+const rim = new THREE.PointLight(0x8fa8d8, 11, 12, 1.8);
+rim.position.set(-1.6, 2.9, -2.1);
+scene.add(rim);
+
+const votive = new THREE.PointLight(0xffb37a, 5, 7, 2.0);
+votive.position.set(0.3, 0.4, 1.4);
+scene.add(votive);
+
+/* Sol : uniquement l'ombre + un halo chaud discret */
+const floor = new THREE.Mesh(new THREE.CircleGeometry(5, 48), new THREE.ShadowMaterial({ opacity: 0.32 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+const glowTex = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 64;
+  const g = c.getContext("2d");
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, "rgba(255,255,255,1)");
+  gr.addColorStop(0.35, "rgba(255,220,180,.85)");
+  gr.addColorStop(1, "rgba(255,140,60,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+})();
+const pool = new THREE.Mesh(
+  new THREE.PlaneGeometry(5.2, 5.2),
+  new THREE.MeshBasicMaterial({ map: glowTex, color: 0xff9a55, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false })
+);
+pool.rotation.x = -Math.PI / 2;
+pool.position.y = 0.015;
+scene.add(pool);
+
+/* ==========================================================================
+   BRAISES — subtiles, réactives au curseur en temps réel.
+   ========================================================================== */
+const COUNT = isCoarse ? 140 : 280;
+const PALETTE = [[1, .42, .21], [1, .62, .34], [1, .79, .5], [.92, .33, .16]];
+const eP = new Float32Array(COUNT * 3), eC = new Float32Array(COUNT * 3), eV = new Float32Array(COUNT * 3);
+const ePh = new Float32Array(COUNT), eTw = new Float32Array(COUNT), eB = new Uint8Array(COUNT);
+let flameOn = false;   // déclaré AVANT spawn() qui y accède dès l'init
+const spawn = (i, bottom) => {
+  if (flameOn && Math.random() < 0.4) {
+    eP[i*3] = (Math.random() - .5) * .8;
+    eP[i*3+1] = 0.3 + Math.random() * 1.2;
+    eP[i*3+2] = -1.05 + (Math.random() - .5) * .4;
+    eV[i*3] = (Math.random() - .5) * .3;
+    eV[i*3+1] = .5 + Math.random() * .9;
+    eV[i*3+2] = (Math.random() - .5) * .2;
+    ePh[i] = Math.random() * 6.28; eTw[i] = 1 + Math.random() * 2;
+    eB[i] = (Math.random() * PALETTE.length) | 0;
+    return;
+  }
+  eP[i*3] = -5 + Math.random() * 10;
+  eP[i*3+1] = bottom ? -0.6 + Math.random() * 0.4 : -0.6 + Math.random() * 6;
+  eP[i*3+2] = -2.4 + Math.random() * 3.4;
+  eV[i*3] = (Math.random() - .5) * .05;
+  eV[i*3+1] = .05 + Math.random() * .12;
+  eV[i*3+2] = (Math.random() - .5) * .03;
+  ePh[i] = Math.random() * 6.28; eTw[i] = .6 + Math.random() * 1.8;
+  eB[i] = (Math.random() * PALETTE.length) | 0;
+};
+for (let i = 0; i < COUNT; i++) spawn(i, false);
+const eGeo = new THREE.BufferGeometry();
+eGeo.setAttribute("position", new THREE.BufferAttribute(eP, 3));
+eGeo.setAttribute("color", new THREE.BufferAttribute(eC, 3));
+const embers = new THREE.Points(eGeo, new THREE.PointsMaterial({
+  size: .05, map: glowTex, vertexColors: true, transparent: true, opacity: .9,
+  depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
+}));
+embers.frustumCulled = false;
+scene.add(embers);
+
+const mouse = { px: .5, py: .5 };
+addEventListener("pointermove", (e) => { mouse.px = e.clientX / innerWidth; mouse.py = e.clientY / innerHeight; }, { passive: true });
+let cursorForce = 0;
+addEventListener("pointerdown", (e) => {
+  cursorForce = 1.6;
+  const t = e.target;
+  if (t && t.closest && t.closest("a,button,input,textarea,select,summary,label")) return;
+  for (let n = 0; n < 14; n++) {
+    const i = (Math.random() * COUNT) | 0, ix = i * 3;
+    const a = Math.random() * Math.PI * 2, sp = 0.6 + Math.random() * 1.5;
+    eP[ix] = cw.x + (Math.random() - 0.5) * 0.15;
+    eP[ix + 1] = cw.y + (Math.random() - 0.5) * 0.15;
+    eP[ix + 2] = 0.3 + (Math.random() - 0.5) * 0.4;
+    eV[ix] = Math.cos(a) * sp;
+    eV[ix + 1] = Math.abs(Math.sin(a)) * sp * 0.9 + 0.35;
+    eV[ix + 2] = (Math.random() - 0.5) * 0.3;
+    eTw[i] = 1.2 + Math.random() * 2;
+  }
+}, { passive: true });
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), cw = new THREE.Vector3(999, 999, 0);
+const updateCursor = () => {
+  ndc.set(mouse.px * 2 - 1, -(mouse.py * 2 - 1));
+  ray.setFromCamera(ndc, camera);
+  const t = (0.3 - ray.ray.origin.z) / ray.ray.direction.z;
+  if (t > 0) cw.copy(ray.ray.origin).addScaledVector(ray.ray.direction, t);
+};
+const updateEmbers = (dt, t) => {
+  const damp = Math.pow(.28, dt), R = 1.5, R2 = R * R;
+  for (let i = 0; i < COUNT; i++) {
+    const ix = i * 3;
+    let x = eP[ix] + (eV[ix] + Math.sin(t * .8 + ePh[i]) * .1) * dt;
+    let y = eP[ix+1] + (eV[ix+1] + Math.sin(t * .5 + ePh[i] * 1.7) * .02) * dt;
+    let z = eP[ix+2] + (eV[ix+2] + Math.cos(t * .6 + ePh[i]) * .04) * dt;
+    const dx = x - cw.x, dy = y - cw.y, d2 = dx * dx + dy * dy;
+    if (d2 < R2 && d2 > .0001) {
+      const d = Math.sqrt(d2), f = 1 - d / R;
+      const push = f * f * (3.2 + cursorForce * 9) * dt;
+      eV[ix] += dx / d * push;
+      eV[ix+1] += dy / d * push + f * .6 * dt;
+    }
+    eV[ix] *= damp; eV[ix+2] *= damp;
+    if (y > 6 || x < -5.6 || x > 5.6) { spawn(i, true); continue; }
+    eP[ix] = x; eP[ix+1] = y; eP[ix+2] = z;
+    const b = PALETTE[eB[i]];
+    const k = .4 + .6 * (.5 + .5 * Math.sin(t * eTw[i] + ePh[i] * 3.1));
+    eC[ix] = b[0] * k; eC[ix+1] = b[1] * k; eC[ix+2] = b[2] * k;
+  }
+  cursorForce = Math.max(0, cursorForce - dt * 2.4);
+  eGeo.attributes.position.needsUpdate = true;
+  eGeo.attributes.color.needsUpdate = true;
+};
+
+/* ==========================================================================
+   LA STATUE FRAGMENTÉE — chargement + scrub inversé.
+   ========================================================================== */
+const statueGroup = new THREE.Group();
+scene.add(statueGroup);
+let mixer = null, actions = [], clipDur = 0, assembleP = 0;
+
+function loadGLB(url, label, cb) {
+  const xhr = new XMLHttpRequest();
+  xhr.open("GET", url, true);
+  xhr.responseType = "arraybuffer";
+  xhr.onprogress = (e) => {
+    if (e.lengthComputable) vStatus.set(label + " : " + (e.loaded / 1048576).toFixed(1) + " / " + (e.total / 1048576).toFixed(1) + " Mo");
+  };
+  xhr.onload = () => {
+    if ((xhr.status !== 200 && xhr.status !== 0) || !xhr.response || xhr.response.byteLength < 1000) {
+      return vStatus.err(label + " : " + url + " introuvable — placez le fichier à côté de demo.html.");
+    }
+    try {
+      new GLTFLoader().parse(xhr.response, "", (g) => cb(g),
+        (err) => vStatus.err(label + " : décodage impossible (" + (err && err.message || err) + ")"));
+    } catch (err) { vStatus.err(label + " : " + (err && err.message || err)); }
+  };
+  xhr.onerror = () => vStatus.err(label + " : échec réseau — serveur local lancé ?");
+  try { xhr.send(null); } catch (err) { vStatus.err(label + " : " + (err && err.message || err)); }
+}
+
+/* --- Les fragments (animation d'assemblage) --- */
+const intro = { v: 0 };   // reserve (plus d'intro-eclatement)
+let fracRoot = null;
+loadGLB(window.VESTA_DEMO_GLB || "vesta_fracture.glb", "Fragments", (gltf) => {
+  const root = gltf.scene;
+  fracRoot = root;
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = true; o.receiveShadow = true;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    mats.forEach((m) => { if (m) { m.metalness = 0; if (m.map) m.map.anisotropy = 8; } });
+  });
+  statueGroup.add(root);
+  mixer = new THREE.AnimationMixer(root);
+  actions = gltf.animations.map((clip) => {
+    clipDur = Math.max(clipDur, clip.duration);
+    const a = mixer.clipAction(clip);
+    a.clampWhenFinished = true;
+    a.play(); a.paused = true;
+    return a;
+  });
+  setAssembly(1);
+  mixer.update(0);
+  root.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(root);
+  const k = 2.3 / b.getSize(new THREE.Vector3()).y;
+  statueGroup.scale.setScalar(k);
+  const c = b.getCenter(new THREE.Vector3());
+  statueGroup.position.set(-c.x * k, -b.min.y * k, -c.z * k);
+  if (!actions.length) vStatus.err("GLB sans animation — réexportez avec « Animations » coché.");
+  else vStatus.ok(root.children.length + " fragments prêts. Scrollez : l'œuvre s'assemble.");
+  setAssembly(assembleP);
+});
+
+/* --- Le HERO haute définition : prend le relais une fois assemblée --- */
+let hero = null;
+const heroMats = [];
+loadGLB(window.VESTA_HERO_GLB || "vesta_hero.glb", "Haute définition", (gltf) => {
+  const root = gltf.scene;
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = true; o.receiveShadow = true;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    mats.forEach((m) => {
+      if (!m) return;
+      m.metalness = 0;
+      if (m.map) m.map.anisotropy = 8;
+      m.transparent = true; m.opacity = 0;
+      heroMats.push(m);
+    });
+  });
+  root.scale.setScalar(1.0025);   // 0,25% en surépaisseur : couvre les fragments sans z-fight
+  root.visible = false;
+  statueGroup.add(root);          // même repère Blender -> alignement au vertex près
+  hero = root;
+});
+
+/* progress 0 = éclatée (fin du bake) -> 1 = intacte (frame 1) : temps inversé */
+function setAssembly(p) {
+  assembleP = p;
+  if (!mixer || !clipDur) return;
+  const t = (1 - p) * (clipDur - 1 / 24);   // -1 frame : évite le wrap de fin de clip
+  actions.forEach((a) => { a.time = Math.max(0, t); });
+  mixer.update(0);
+}
+
+/* ==========================================================================
+   GSAP SCROLLTRIGGER — le scroll est la timeline.
+   ========================================================================== */
+const prog = { p: 0 };
+ScrollTrigger.create({
+  trigger: "#demo-track",
+  start: "top top",
+  end: "bottom bottom",
+  scrub: 0.9,                                  // inertie douce (sensation "forge")
+  onUpdate: (self) => { prog.p = self.progress; },
+});
+
+/* Légendes : entrée/sortie sur des fenêtres de progression */
+const caps = [
+  { el: "#cap1", a: 0.02, b: 0.30 },
+  { el: "#cap2", a: 0.34, b: 0.66 },
+  { el: "#cap3", a: 0.70, b: 0.95 },
+];
+caps.forEach(({ el, a, b }) => {
+  gsap.fromTo(el, { opacity: 0, y: 40 }, {
+    opacity: 1, y: 0, ease: "none",
+    scrollTrigger: {
+      trigger: "#demo-track",
+      start: () => innerHeight * 0 + (document.getElementById("demo-track").offsetHeight - innerHeight) * a,
+      end: () => (document.getElementById("demo-track").offsetHeight - innerHeight) * (a + 0.07),
+      scrub: true,
+    },
+  });
+  gsap.to(el, {
+    opacity: 0, y: -40, ease: "none",
+    scrollTrigger: {
+      trigger: "#demo-track",
+      start: () => (document.getElementById("demo-track").offsetHeight - innerHeight) * (b - 0.05),
+      end: () => (document.getElementById("demo-track").offsetHeight - innerHeight) * b,
+      scrub: true,
+    },
+  });
+});
+
+
+/* ==========================================================================
+   LA FLAMME — shader procédural (fbm advecté, langues, cœur blanc),
+   billboard cylindrique derrière la déesse. S'allume à l'assemblage.
+   ========================================================================== */
+const flameUniforms = { uTime: { value: 0 }, uPow: { value: 0 } };
+const flame = (() => {
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: flameUniforms,
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    fragmentShader: `
+      varying vec2 vUv; uniform float uTime; uniform float uPow;
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+      float noise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
+        return mix(mix(hash(i),hash(i+vec2(1,0)),f.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y); }
+      float fbm(vec2 p){ float v=0.0, a=0.5;
+        for(int i=0;i<5;i++){ v += a*noise(p); p = p*2.03 + 17.1; a *= 0.52; } return v; }
+      void main(){
+        vec2 p = vUv;
+        float t = uTime;
+        /* deux couches advectées vers le haut, vitesses différentes */
+        float n1 = fbm(vec2(p.x*3.4,        p.y*2.1 - t*1.65));
+        float n2 = fbm(vec2(p.x*6.5 + 4.2,  p.y*3.6 - t*2.6));
+        float n = n1*0.66 + n2*0.34;
+        /* silhouette : pincée en haut, assise large, langues par bruit */
+        float cx = p.x - 0.5 + (n - 0.5)*0.24*(1.0 - p.y*0.55);
+        float width = mix(0.30, 0.045, pow(p.y, 1.25));
+        float body = 1.0 - smoothstep(width*0.35, width, abs(cx));
+        /* champ de chaleur */
+        float heat = body * (1.0 - p.y) * (0.62 + n*0.85) * uPow;
+        heat *= smoothstep(0.0, 0.12, p.y*0.5 + 0.08);         /* assise douce */
+        heat = clamp(heat*1.6, 0.0, 1.0);
+        /* rampe : braise profonde -> orange -> or -> coeur blanc-crème */
+        vec3 col = mix(vec3(0.10,0.008,0.0), vec3(0.78,0.11,0.0), smoothstep(0.02,0.28,heat));
+        col = mix(col, vec3(1.0,0.48,0.12), smoothstep(0.22,0.55,heat));
+        col = mix(col, vec3(1.0,0.78,0.42), smoothstep(0.5,0.78,heat));
+        col = mix(col, vec3(1.0,0.95,0.83), smoothstep(0.76,0.97,heat));
+        float a = pow(heat, 1.35);
+        gl_FragColor = vec4(col*a*1.7, a);
+      }`,
+  });
+  const g = new THREE.Group();
+  const p1 = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 3.1), mat);
+  p1.position.y = 1.42;
+  g.add(p1);
+  const p2 = p1.clone();
+  p2.rotation.y = Math.PI / 2;
+  g.add(p2);
+  g.position.set(0, 0.02, -1.05);   /* derrière la déesse */
+  scene.add(g);
+  return g;
+})();
+
+/* lueur + lumière de la flamme */
+const flameGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: glowTex, color: 0xff8a3d, transparent: true, opacity: 0,
+  blending: THREE.AdditiveBlending, depthWrite: false,
+}));
+flameGlow.position.set(0, 1.35, -1.05);
+flameGlow.scale.setScalar(4.6);
+scene.add(flameGlow);
+const flameLight = new THREE.PointLight(0xff8a3d, 0, 13, 1.7);
+flameLight.position.set(0, 1.5, -0.85);
+scene.add(flameLight);
+
+/* état d'allumage : monte avec attaque vive quand la statue est complète */
+let ign = 0, ignPrev = 0;
+function igniteBurst() {
+  for (let n = 0; n < 46; n++) {
+    const i = (Math.random() * COUNT) | 0, ix = i * 3;
+    eP[ix] = (Math.random() - 0.5) * 1.0;
+    eP[ix + 1] = 0.3 + Math.random() * 1.4;
+    eP[ix + 2] = -1.05 + (Math.random() - 0.5) * 0.5;
+    eV[ix] = (Math.random() - 0.5) * 0.7;
+    eV[ix + 1] = 1.2 + Math.random() * 1.6;
+    eV[ix + 2] = (Math.random() - 0.5) * 0.4;
+  }
+}
+
+/* ---------- Boucle : 60 fps, tout est piloté par prog.p ---------- */
+const forgeFill = document.getElementById("forgeFill");
+const forgePct = document.getElementById("forgePct");
+const forgeLabel = document.getElementById("forgeLabel");
+let last = performance.now(), elapsed = 0, smoothP = 0;
+
+function frame() {
+  requestAnimationFrame(frame);
+  const now = performance.now();
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now; elapsed += dt;
+
+  smoothP = lerp(smoothP, prog.p, 1 - Math.pow(0.002, dt));
+  const q = Math.max(smoothP, intro.v);   // l'intro-éclatement prime sur le scroll
+  setAssembly(q);
+
+  /* caméra : orbite lente 3/4 -> face, dolly-in final, micro-parallaxe */
+  const ang = lerp(0.62, 0.0, q);        // ~35° -> face
+  const dist = lerp(6.4, 4.6, THREE.MathUtils.smoothstep(q, 0.55, 1));
+  const cy = lerp(2.1, 1.5, q);
+  camera.position.set(
+    Math.sin(ang) * dist + (reduceMotion || isCoarse ? 0 : (mouse.px - .5) * .3),
+    cy + (reduceMotion || isCoarse ? 0 : -(mouse.py - .5) * .2),
+    Math.cos(ang) * dist
+  );
+  camera.lookAt(0, lerp(1.5, 1.15, q), 0);
+
+  /* la lumière monte avec l'assemblage : le drame se resserre */
+  key.intensity = lerp(16, 36, q);
+  rim.intensity = lerp(14, 9, q);
+  votive.intensity = 4.5 + Math.sin(elapsed * 2.3) * .9;
+  pool.material.opacity = lerp(0.04, 0.1, q) + Math.sin(elapsed * 1.7) * .012;
+
+  /* --- SWAP INVISIBLE : le hero HD prend le relais sous le flash --- */
+  const sw = THREE.MathUtils.smoothstep(q, 0.955, 0.992);
+  if (hero) {
+    hero.visible = sw > 0.001;
+    const solid = sw > 0.999;
+    heroMats.forEach((m) => { m.opacity = sw; m.transparent = !solid; });
+    if (fracRoot) fracRoot.visible = sw < 0.999;
+  }
+
+  /* --- LA FLAMME s'allume quand l'œuvre est complète --- */
+  const ignT = q > 0.975 ? 1 : 0;
+  if (ignT > 0.5 && ignPrev < 0.5) igniteBurst();
+  ignPrev = ignT;
+  ign = lerp(ign, ignT, 1 - Math.pow(ignT > 0.5 ? 0.05 : 0.14, dt));   /* attaque vive, extinction douce */
+  flameOn = ign > 0.4;
+  const flick = 1 + Math.sin(elapsed * 21.0) * 0.06 * ign + Math.sin(elapsed * 8.3 + 1.7) * 0.05 * ign;
+  flameUniforms.uTime.value = elapsed;
+  flameUniforms.uPow.value = ign * flick;
+  flame.scale.set(1, 0.55 + 0.45 * ign, 1);
+  flame.rotation.y = Math.atan2(camera.position.x - flame.position.x, camera.position.z - flame.position.z);
+  flameGlow.material.opacity = 0.32 * ign * flick;
+  flameLight.intensity = 30 * ign * flick;
+  renderer.toneMappingExposure = 1.05 + ign * 0.1;
+  if (ign > 0.6) forgeLabel.textContent = "LA FLAMME EST ALLUMÉE";
+  else forgeLabel.textContent = "ASSEMBLAGE";
+
+  updateCursor();
+  updateEmbers(dt, elapsed);
+
+  forgeFill.style.transform = "scaleX(" + q.toFixed(3) + ")";
+  forgePct.textContent = Math.round(q * 100) + "%";
+
+  renderer.render(scene, camera);
+}
+frame();
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  ScrollTrigger.refresh();
+});
+</script>
+</body>
+</html>
