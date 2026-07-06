@@ -203,6 +203,24 @@ body::before{
 .film-chip i{color:#ff3b30;font-style:normal;animation:recblink2 1.6s steps(2) infinite}
 @keyframes recblink2{50%{opacity:.25}}
 @media (prefers-reduced-motion: reduce){.photo-field{display:none}}
+
+/* ===== L'invitation au scroll ===== */
+#scrollCue{position:fixed;left:50%;bottom:2.2rem;z-index:30;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:.55rem;pointer-events:none;
+  transition:opacity .5s ease}
+#scrollCue .lbl{font-family:"JetBrains Mono",monospace;font-size:.58rem;letter-spacing:.34em;
+  color:#8A8178}
+#scrollCue .chev{width:14px;height:14px;border-right:1.5px solid #FF6B35;border-bottom:1.5px solid #FF6B35;
+  transform:rotate(45deg);animation:cuefall 1.7s cubic-bezier(.45,0,.25,1) infinite}
+#scrollCue .chev:nth-child(3){animation-delay:.18s;opacity:.55}
+@keyframes cuefall{0%{transform:rotate(45deg) translate(-7px,-7px);opacity:0}
+  35%{opacity:1}70%{opacity:.9}100%{transform:rotate(45deg) translate(6px,6px);opacity:0}}
+/* ===== Le flash d'embrasement : camoufle l'échange fragments -> statue ===== */
+#ignFlash{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:0;
+  background:radial-gradient(58% 52% at 50% 46%, rgba(255,236,200,.95), rgba(255,150,70,.5) 42%, rgba(255,107,53,.14) 66%, transparent 82%)}
+#ignFlash.on{animation:ignflash .85s cubic-bezier(.1,.7,.3,1) forwards}
+@keyframes ignflash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+@media (max-width:720px){body::after{display:none}}
 </style>
 </head>
 <body>
@@ -241,6 +259,12 @@ body::before{
 
 <div id="forge"><span id="forgeLabel">ASSEMBLAGE</span><div class="bar"><i id="forgeFill"></i></div><span id="forgePct">0%</span></div>
 
+<div id="scrollCue" aria-hidden="true">
+  <span class="lbl">SCROLLEZ POUR FORGER</span>
+  <span class="chev"></span>
+  <span class="chev"></span>
+</div>
+<div id="ignFlash" aria-hidden="true"></div>
 <div class="photo-field" aria-hidden="true">
   <div class="pcard"><img src="demo_entree.jpg" alt=""><span>PHOTO 01 — ENTRÉE</span></div>
   <div class="pcard"><img src="demo_sejour.jpg" alt=""><span>PHOTO 02 — SÉJOUR</span></div>
@@ -344,7 +368,8 @@ window.__vmouse = { x: 0, y: 0, px: 0.5, py: 0.5, vx: 0 };
   };
   let mx = -9999, my = -9999;
   window.addEventListener("pointermove", (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
-  const R = 90, MAXD = 8;
+  window.addEventListener("resize", () => { for (const g of groups) for (const c of g.chars) c.ox = undefined; });
+  const R = 110, MAXD = 8;
   function loop() {
     requestAnimationFrame(loop);
     for (const g of groups) {
@@ -352,38 +377,33 @@ window.__vmouse = { x: 0, y: 0, px: 0.5, py: 0.5, vx: 0 };
       if (rb.bottom < -60 || rb.top > window.innerHeight + 60) continue;
       const near = mx > rb.left - R && mx < rb.right + R && my > rb.top - R && my < rb.bottom + R;
       for (const c of g.chars) {
-        let tx = 0, ty = 0, tr = 0, tw = 0;
+        let tw = 0;
         if (near) {
-          const r = c.sp.getBoundingClientRect();
-          const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-          const dx = cx - mx, dy = cy - my;
+          if (c.ox === undefined) {
+            const r = c.sp.getBoundingClientRect();
+            c.ox = r.left + r.width / 2 - rb.left;
+            c.oy = r.top + r.height / 2 - rb.top;
+          }
+          const dx = (rb.left + c.ox) - mx, dy = (rb.top + c.oy) - my;
           const d = Math.hypot(dx, dy);
-          if (d < R && d > 0.001) {
-            const f = 1 - d / R, e2 = f * f * f;
-            const A = g.amp || MAXD;
-            tx = (dx / d) * e2 * A;
-            ty = (dy / d) * e2 * A * 0.7;
-            tr = (dx / d) * e2 * 3;
-            tw = e2;
+          if (d < R) {
+            const f = 1 - d / R;
+            tw = f * f * (3 - 2 * f);
           }
         }
-        c.vx = (c.vx || 0) * 0.72 + (tx - c.x) * 0.19;
-        c.vy = (c.vy || 0) * 0.72 + (ty - c.y) * 0.19;
-        c.x += c.vx; c.y += c.vy;
-        c.r += (tr - c.r) * 0.14; c.w += (tw - c.w) * 0.13;
-        if (Math.abs(c.x) + Math.abs(c.y) + Math.abs(c.w) > 0.01) {
-          c.sp.style.transform = "translate(" + c.x.toFixed(2) + "px," + c.y.toFixed(2) + "px) rotate(" + c.r.toFixed(2) + "deg) scale(" + (1 + c.w * 0.05).toFixed(3) + ")";
-          c.sp.style.color = c.w > 0.04 ? "color-mix(in srgb, #FF6B35 " + Math.round(c.w * 52) + "%, currentColor)" : "";
-          c.sp.style.textShadow = c.w > 0.04 ? "0 0 " + (c.w * 13).toFixed(0) + "px rgba(255,107,53," + (c.w * 0.45).toFixed(2) + ")" : "";
+        c.w += (tw - c.w) * 0.16;
+        if (c.w > 0.008) {
+          c.sp.style.transform = "scale(" + (1 + c.w * 0.32).toFixed(3) + ")";
+          c.sp.style.textShadow = "0 0 " + (c.w * 16).toFixed(0) + "px rgba(255,107,53," + (c.w * 0.35).toFixed(2) + ")";
         } else if (c.sp.style.transform) {
-          c.sp.style.transform = ""; c.sp.style.color = ""; c.sp.style.textShadow = "";
+          c.sp.style.transform = ""; c.sp.style.textShadow = "";
         }
       }
     }
   }
   const boot = () => {
-    document.querySelectorAll(".caption h2, #finale h2").forEach((el) => split(el, 7));
-    document.querySelectorAll(".caption p, #finale p, .caption .num").forEach((el) => split(el, 3.5));
+    /* Loupe : uniquement les polices braise */
+    document.querySelectorAll(".caption .num, .caption em, #finale em").forEach((el) => split(el, 7));
     requestAnimationFrame(loop);
   };
   if (document.readyState === "loading") {
@@ -421,7 +441,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
@@ -741,11 +761,12 @@ const flame = (() => {
         /* deux couches advectées vers le haut, vitesses différentes */
         float n1 = fbm(vec2(p.x*3.4,        p.y*2.1 - t*1.65));
         float n2 = fbm(vec2(p.x*6.5 + 4.2,  p.y*3.6 - t*2.6));
-        float n = n1*0.66 + n2*0.34;
+        float n3 = fbm(vec2(p.x*12.0 - 7.0, p.y*6.8 - t*4.1));   /* détail : léchage des pointes */
+        float n = n1*0.56 + n2*0.29 + n3*0.15;
         /* silhouette : pincée en haut, assise large, langues par bruit */
-        float cx = p.x - 0.5 + (n - 0.5)*0.24*(1.0 - p.y*0.55);
+        float cx = p.x - 0.5 + (n - 0.5)*0.26*(1.0 - p.y*0.55) + sin(t*0.7)*0.014*(1.0 - p.y);
         float width = mix(0.30, 0.045, pow(p.y, 1.25));
-        float body = 1.0 - smoothstep(width*0.35, width, abs(cx));
+        float body = 1.0 - smoothstep(width*0.26, width, abs(cx));   /* langues plus affûtées */
         /* champ de chaleur */
         float heat = body * (1.0 - p.y) * (0.62 + n*0.85) * uPow;
         heat *= smoothstep(0.0, 0.12, p.y*0.5 + 0.08);         /* assise douce */
@@ -755,7 +776,8 @@ const flame = (() => {
         col = mix(col, vec3(1.0,0.48,0.12), smoothstep(0.22,0.55,heat));
         col = mix(col, vec3(1.0,0.78,0.42), smoothstep(0.5,0.78,heat));
         col = mix(col, vec3(1.0,0.95,0.83), smoothstep(0.76,0.97,heat));
-        float a = pow(heat, 1.35);
+        col = mix(col, vec3(1.0,0.99,0.93), smoothstep(0.9,1.0,heat));   /* cœur incandescent */
+        float a = pow(heat, 1.22);
         gl_FragColor = vec4(col*a*1.7, a);
       }`,
   });
@@ -786,6 +808,8 @@ scene.add(flameLight);
 /* état d'allumage : monte avec attaque vive quand la statue est complète */
 let ign = 0, ignPrev = 0;
 function igniteBurst() {
+  const fl = document.getElementById("ignFlash");
+  if (fl) { fl.classList.remove("on"); void fl.offsetWidth; fl.classList.add("on"); }
   for (let n = 0; n < 46; n++) {
     const i = (Math.random() * COUNT) | 0, ix = i * 3;
     eP[ix] = (Math.random() - 0.5) * 1.0;
@@ -880,6 +904,8 @@ function frame() {
   smoothP = lerp(smoothP, prog.p, 1 - Math.pow(0.002, dt));
   const q = Math.max(smoothP, intro.v);   // l'intro-éclatement prime sur le scroll
   majPhotos(q, elapsed);
+  { const cue = document.getElementById("scrollCue");
+    if (cue) cue.style.opacity = q > 0.012 ? "0" : "1"; }
   setAssembly(q);
 
   /* caméra : orbite lente 3/4 -> face, dolly-in final, micro-parallaxe */

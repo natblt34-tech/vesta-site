@@ -291,7 +291,7 @@ html.has-cursor #cursor{display:block}
 }
 .compare img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;-webkit-user-drag:none;user-select:none;pointer-events:none}
 .compare-after,.compare-before{position:absolute;inset:0}
-.compare-after img{animation:kenburns 18s ease-in-out infinite alternate}
+.compare-after video{width:100%;height:100%;object-fit:cover;display:block}
 @keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.12) translate(-1.6%,-1.2%)}}
 .compare-before{clip-path:inset(0 50% 0 0);will-change:clip-path}
 .compare-before img{filter:grayscale(.5) brightness(.8) contrast(.88)}
@@ -354,7 +354,6 @@ html.has-cursor #cursor{display:block}
   background:linear-gradient(180deg,rgba(255,107,53,.09),transparent 50%),rgba(30,23,16,.7);
   box-shadow:0 30px 80px -30px rgba(255,107,53,.3);
 }
-.plan-flag{font-family:var(--mono);font-size:.64rem;letter-spacing:.28em;text-transform:uppercase;color:var(--ember-hot);margin-bottom:1.2rem}
 .plan-name{font-family:var(--display);font-weight:300;font-size:1.9rem}
 .plan-for{font-size:.92rem;color:var(--dim);margin-top:.4rem}
 .plan-price{margin-block:1.6rem .5rem;display:flex;align-items:baseline;gap:.5rem}
@@ -442,7 +441,7 @@ html.has-cursor #cursor{display:block}
   #ignition,#cursor{display:none!important}
   html.has-cursor, html.has-cursor *{cursor:auto!important}
   #grain{animation:none}
-  .compare-after img,.marquee-track,.scroll-cue::after{animation:none}
+  .marquee-track,.scroll-cue::after{animation:none}
   .hero h1 .line>span{transform:none;animation:none}
   .hero .delayed{opacity:1;animation:none}
   .reveal{opacity:1;transform:none;transition:none}
@@ -571,6 +570,26 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
 .site-header.nav-up{transform:translateY(-110%)}
 /* ===== Perf : sections sous la ligne de flottaison ===== */
 .benefits,.pricing,.studio,.faq{content-visibility:auto;contain-intrinsic-size:auto 100vh}
+
+/* ===== Clic dans le foyer : onde + lueur ===== */
+.click-ring{position:fixed;z-index:96;pointer-events:none;width:12px;height:12px;
+  border:1px solid rgba(255,140,80,.6);border-radius:50%;transform:translate(-50%,-50%);
+  animation:vring .7s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes vring{to{width:110px;height:110px;border-color:rgba(255,107,53,0)}}
+.click-glow{position:fixed;z-index:96;pointer-events:none;width:90px;height:90px;
+  border-radius:50%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle, rgba(255,170,90,.35), rgba(255,107,53,.12) 45%, transparent 70%);
+  animation:vglow .55s ease-out forwards}
+@keyframes vglow{from{opacity:1;transform:translate(-50%,-50%) scale(.4)}to{opacity:0;transform:translate(-50%,-50%) scale(1.25)}}
+/* ===== L'embrasement des boutons au clic ===== */
+.btn{position:relative;overflow:hidden}
+.btn .ign{position:absolute;left:var(--ix,50%);top:var(--iy,50%);width:8px;height:8px;
+  pointer-events:none;border-radius:50%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle, rgba(255,214,160,.85), rgba(255,107,53,.4) 45%, transparent 70%);
+  animation:btnign .55s ease-out forwards}
+@keyframes btnign{to{width:260px;height:260px;opacity:0}}
+/* ===== Perf mobile : le grain est un luxe de desktop ===== */
+@media (max-width:720px){body::after{display:none}}
 </style>
 <script type="application/ld+json">
 {
@@ -826,7 +845,8 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
              aria-label="Comparateur avant / après — utilisez les flèches gauche et droite"
              aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
           <div class="compare-after">
-            <img loading="lazy" decoding="async" src="compare_apres.jpg" alt="Frame du film généré par Vesta">
+            <video id="cmpVideo" poster="compare_apres.jpg" muted loop playsinline preload="metadata"
+                 aria-label="Film généré par Vesta en lecture"><source src="preuve.mp4" type="video/mp4"></video>
             <div class="film-bars" aria-hidden="true"></div>
             <span class="compare-label label-after">Film Vesta · 24 fps</span>
           </div>
@@ -905,8 +925,7 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
           </article>
 
           <article class="price-card is-featured">
-            <span class="plan-badge">LE CHOIX DES AGENCES</span>
-            <p class="plan-flag">Le choix des agents</p>
+            <span class="plan-badge">LE CHOIX DES AGENTS</span>
             <h3 class="plan-name">Flamme</h3>
             <p class="plan-for">Pour l'agent qui publie chaque semaine.</p>
             <p class="plan-price">
@@ -1121,7 +1140,8 @@ window.VESTA_STATUE_URL = "vestalin_web.glb"; // version web 7,4 Mo (l'originale
   };
   let mx = -9999, my = -9999;
   window.addEventListener("pointermove", (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
-  const R = 90, MAXD = 8;
+  window.addEventListener("resize", () => { for (const g of groups) for (const c of g.chars) c.ox = undefined; });
+  const R = 110, MAXD = 8;
   function loop() {
     requestAnimationFrame(loop);
     for (const g of groups) {
@@ -1129,42 +1149,33 @@ window.VESTA_STATUE_URL = "vestalin_web.glb"; // version web 7,4 Mo (l'originale
       if (rb.bottom < -60 || rb.top > window.innerHeight + 60) continue;
       const near = mx > rb.left - R && mx < rb.right + R && my > rb.top - R && my < rb.bottom + R;
       for (const c of g.chars) {
-        let tx = 0, ty = 0, tr = 0, tw = 0;
+        let tw = 0;
         if (near) {
-          const r = c.sp.getBoundingClientRect();
-          const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-          const dx = cx - mx, dy = cy - my;
+          if (c.ox === undefined) {   // centre de lettre mis en cache : zéro reflow par frame
+            const r = c.sp.getBoundingClientRect();
+            c.ox = r.left + r.width / 2 - rb.left;
+            c.oy = r.top + r.height / 2 - rb.top;
+          }
+          const dx = (rb.left + c.ox) - mx, dy = (rb.top + c.oy) - my;
           const d = Math.hypot(dx, dy);
-          if (d < R && d > 0.001) {
-            const f = 1 - d / R, e2 = f * f * f;
-            const A = g.amp || MAXD;
-            tx = (dx / d) * e2 * A;
-            ty = (dy / d) * e2 * A * 0.7;
-            tr = (dx / d) * e2 * 3;
-            tw = e2;
+          if (d < R) {
+            const f = 1 - d / R;
+            tw = f * f * (3 - 2 * f);   // cloche douce : la loupe
           }
         }
-        c.vx = (c.vx || 0) * 0.72 + (tx - c.x) * 0.19;
-        c.vy = (c.vy || 0) * 0.72 + (ty - c.y) * 0.19;
-        c.x += c.vx; c.y += c.vy;
-        c.r += (tr - c.r) * 0.14; c.w += (tw - c.w) * 0.13;
-        if (Math.abs(c.x) + Math.abs(c.y) + Math.abs(c.w) > 0.01) {
-          c.sp.style.transform = "translate(" + c.x.toFixed(2) + "px," + c.y.toFixed(2) + "px) rotate(" + c.r.toFixed(2) + "deg) scale(" + (1 + c.w * 0.05).toFixed(3) + ")";
-          c.sp.style.color = c.w > 0.04 ? "color-mix(in srgb, #FF6B35 " + Math.round(c.w * 52) + "%, currentColor)" : "";
-          c.sp.style.textShadow = c.w > 0.04 ? "0 0 " + (c.w * 13).toFixed(0) + "px rgba(255,107,53," + (c.w * 0.45).toFixed(2) + ")" : "";
+        c.w += (tw - c.w) * 0.16;
+        if (c.w > 0.008) {
+          c.sp.style.transform = "scale(" + (1 + c.w * 0.32).toFixed(3) + ")";
+          c.sp.style.textShadow = "0 0 " + (c.w * 16).toFixed(0) + "px rgba(255,107,53," + (c.w * 0.35).toFixed(2) + ")";
         } else if (c.sp.style.transform) {
-          c.sp.style.transform = ""; c.sp.style.color = ""; c.sp.style.textShadow = "";
+          c.sp.style.transform = ""; c.sp.style.textShadow = "";
         }
       }
     }
   }
   const boot = () => {
-    document.querySelectorAll(".hero h1").forEach((el) => split(el, 8));
-    document.querySelectorAll("main section h2").forEach((el) => split(el, 7));
-    document.querySelectorAll(".hero .lead, .panel p, .panel-wide p, .panel li, .panel-wide li").forEach((el) => split(el, 3.5));
-    document.querySelectorAll("main section h3").forEach((el) => split(el, 5));
-    document.querySelectorAll(".slate, .demo-hint, .benefit .mono, .price-card .mono").forEach((el) => split(el, 3));
-    document.querySelectorAll("footer p, footer h4").forEach((el) => split(el, 3));
+    /* Loupe : seulement les polices braise (em + slates) — sobriété + perf */
+    document.querySelectorAll("main em, .hero em, .slate").forEach((el) => split(el, 8));
     requestAnimationFrame(loop);
   };
   if (document.readyState === "loading") {
@@ -1352,15 +1363,18 @@ window.__vscroll = window.scrollY;
   const links = [...document.querySelectorAll(".waypoints a")];
   if (!links.length) return;
   const targets = links.map((l) => document.querySelector(l.getAttribute("href")));
+  let bornes = [];
+  const mesurer = () => { bornes = targets.map((sec) => sec ? [sec.offsetTop, sec.offsetTop + sec.offsetHeight] : [0, 0]); };
+  mesurer();
+  window.addEventListener("resize", mesurer);
+  setTimeout(mesurer, 1200);   // après chargement des médias
   const update = () => {
     const mid = window.__vscroll + innerHeight / 2;
     let active = -1;
-    targets.forEach((sec, i) => {
-      if (sec && mid >= sec.offsetTop && mid < sec.offsetTop + sec.offsetHeight) active = i;
-    });
+    bornes.forEach(([a, b], i) => { if (mid >= a && mid < b) active = i; });
     links.forEach((l, i) => l.classList.toggle("is-active", i === active));
-    requestAnimationFrame(update);
   };
+  window.addEventListener("scroll", update, { passive: true });
   update();
 })();
 
@@ -1600,7 +1614,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
@@ -1749,17 +1763,28 @@ window.addEventListener("pointerdown", (e) => {
   cursorForce = 1.6;
   const t = e.target;
   if (t && t.closest && t.closest("a,button,input,textarea,select,summary,label,.compare,[contenteditable]")) return;
-  /* souffle : une poignée de braises jaillit du point cliqué */
-  for (let n = 0; n < 14; n++) {
+  /* souffle : étincelles vives + braises lentes, en cône ascendant */
+  for (let n = 0; n < 26; n++) {
     const i = (Math.random() * COUNT) | 0, ix = i * 3;
-    const a = Math.random() * Math.PI * 2, sp = 0.6 + Math.random() * 1.5;
-    ePos[ix] = cursorW.x + (Math.random() - 0.5) * 0.15;
-    ePos[ix + 1] = cursorW.y + (Math.random() - 0.5) * 0.15;
-    ePos[ix + 2] = 0.2 + (Math.random() - 0.5) * 0.4;
-    eVel[ix] = Math.cos(a) * sp;
-    eVel[ix + 1] = Math.abs(Math.sin(a)) * sp * 0.9 + 0.35;
-    eVel[ix + 2] = (Math.random() - 0.5) * 0.3;
-    eTw[i] = 1.2 + Math.random() * 2;
+    const etincelle = n < 10;                            // 2 populations
+    const a = (Math.random() - 0.5) * Math.PI * 1.15 + Math.PI / 2;   // cône vers le haut
+    const sp = etincelle ? 1.8 + Math.random() * 2.2 : 0.35 + Math.random() * 0.9;
+    ePos[ix] = cursorW.x + (Math.random() - 0.5) * 0.08;
+    ePos[ix + 1] = cursorW.y + (Math.random() - 0.5) * 0.08;
+    ePos[ix + 2] = 0.2 + (Math.random() - 0.5) * 0.5;
+    eVel[ix] = Math.cos(a) * sp * (etincelle ? 1 : 0.7);
+    eVel[ix + 1] = Math.sin(a) * sp * (etincelle ? 1 : 0.75) + 0.25;
+    eVel[ix + 2] = (Math.random() - 0.5) * (etincelle ? 0.9 : 0.25);
+    eTw[i] = etincelle ? 2.6 + Math.random() * 1.6 : 1.1 + Math.random() * 1.2;
+  }
+  /* onde + lueur au point d'impact (DOM éphémère, coût nul) */
+  for (const cls of ["click-ring", "click-glow"]) {
+    const el = document.createElement("span");
+    el.className = cls;
+    el.style.left = e.clientX + "px";
+    el.style.top = e.clientY + "px";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 750);
   }
 }, { passive: true });
 
@@ -1949,6 +1974,29 @@ frame();
       tc.textContent = "00:" + String(m).padStart(2, "0") + ":" +
         String(s).padStart(2, "0") + ":" + String(f).padStart(2, "0");
     }, 42);
+  }
+})();
+/* L'embrasement des boutons : une étincelle au point exact du clic */
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".btn");
+  if (!btn) return;
+  const r = btn.getBoundingClientRect();
+  const s = document.createElement("span");
+  s.className = "ign";
+  s.style.setProperty("--ix", (e.clientX - r.left) + "px");
+  s.style.setProperty("--iy", (e.clientY - r.top) + "px");
+  btn.appendChild(s);
+  setTimeout(function () { s.remove(); }, 600);
+}, { passive: true });
+/* Le film du comparateur ne tourne que sous les yeux */
+(function () {
+  const cv = document.getElementById("cmpVideo");
+  if (cv && "IntersectionObserver" in window) {
+    new IntersectionObserver(function (es) {
+      es.forEach(function (en) {
+        if (en.isIntersecting) { cv.play().catch(function () {}); } else { cv.pause(); }
+      });
+    }, { threshold: 0.3 }).observe(cv);
   }
 })();
 </script>
