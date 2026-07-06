@@ -600,7 +600,7 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
   "areaServed": "FR",
   "offers": [
     {"@type": "Offer", "name": "Étincelle", "price": "0", "priceCurrency": "EUR"},
-    {"@type": "Offer", "name": "Flamme", "price": "49", "priceCurrency": "EUR"},
+    {"@type": "Offer", "name": "Flamme", "price": "29", "priceCurrency": "EUR"},
     {"@type": "Offer", "name": "Brasier", "price": "149", "priceCurrency": "EUR"}
   ]
 }
@@ -615,7 +615,7 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
     {"@type": "Question", "name": "Combien de temps pour recevoir ma vidéo ?",
      "acceptedAnswer": {"@type": "Answer", "text": "48 heures maximum après l'envoi de vos photos, formats 16:9 pour les portails et vertical pour les réseaux sociaux."}},
     {"@type": "Question", "name": "Combien ça coûte comparé à un vidéaste ?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Un vidéaste facture 300 à 800 € par bien. Vesta démarre à 0 € (première vidéo offerte), puis 49 €/mois."}}
+     "acceptedAnswer": {"@type": "Answer", "text": "Un vidéaste facture 300 à 800 € par bien. Vesta démarre à 0 € (première vidéo offerte), puis 29 €/mois."}}
   ]
 }
 </script>
@@ -928,11 +928,11 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
             <h3 class="plan-name">Flamme</h3>
             <p class="plan-for">Pour l'agent qui publie chaque semaine.</p>
             <p class="plan-price">
-              <span class="amount" data-monthly="49 €" data-yearly="39 €">49 €</span>
+              <span class="amount" data-monthly="29 €" data-yearly="23 €">29 €</span>
               <span class="period">/ mois</span>
             </p>
             <ul class="plan-list">
-              <li>10 vidéos par mois, 4K sans filigrane</li>
+              <li>5 vidéos par mois, sans filigrane</li>
               <li>Votre logo et votre charte intégrés</li>
               <li>Formats portails, Reels &amp; stories</li>
               <li>Musiques libres de droits incluses</li>
@@ -1164,7 +1164,7 @@ window.VESTA_STATUE_URL = "vestalin_web.glb"; // version web 7,4 Mo (l'originale
         }
         c.w += (tw - c.w) * 0.16;
         if (c.w > 0.008) {
-          c.sp.style.transform = "scale(" + (1 + c.w * 0.16).toFixed(3) + ")";
+          c.sp.style.transform = "scale(" + (1 + c.w * 0.08).toFixed(3) + ")";
           c.sp.style.textShadow = "0 0 " + (c.w * 10).toFixed(0) + "px rgba(255,107,53," + (c.w * 0.28).toFixed(2) + ")";
         } else if (c.sp.style.transform) {
           c.sp.style.transform = ""; c.sp.style.textShadow = "";
@@ -1759,7 +1759,6 @@ const updateCursorWorld = () => {
   if (t > 0) cursorW.copy(ray.ray.origin).addScaledVector(ray.ray.direction, t);
 };
 window.addEventListener("pointerdown", (e) => {
-  cursorForce = 1.6;
   const t = e.target;
   if (t && t.closest && t.closest("a,button,input,textarea,select,summary,label,.compare,[contenteditable]")) return;
   /* micro-volute de fumée au point du clic — et c'est tout */
