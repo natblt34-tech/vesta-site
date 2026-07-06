@@ -251,6 +251,27 @@ body::before{
   8%{opacity:.85}
   to{opacity:0;transform:translate(-50%,-50%) translateY(-34px) translateX(6px) scale(1.9) rotate(14deg)}
 }
+
+/* ===== Chiffre d'acte fantôme : la profondeur du fond ===== */
+#ghostNum{position:fixed;left:50%;top:48%;z-index:1;transform:translate(-50%,-50%);
+  font-family:"Fraunces",serif;font-weight:300;font-style:italic;font-size:30vw;
+  color:rgba(239,231,216,.04);pointer-events:none;user-select:none;line-height:1;
+  transition:opacity .6s ease}
+/* ===== Pellicule de navigation : les 4 rushes en pied de page ===== */
+#pellicule{position:fixed;left:50%;bottom:1.1rem;z-index:28;transform:translateX(-50%);
+  display:flex;gap:.55rem;padding:.5rem .6rem;border-radius:8px;
+  background:rgba(10,8,6,.4);backdrop-filter:blur(8px);
+  border:1px solid rgba(239,231,216,.1);transition:opacity .5s ease}
+#pellicule button{all:unset;cursor:pointer;position:relative;width:52px;height:30px;
+  border-radius:3px;overflow:hidden;border:1px solid rgba(239,231,216,.16);
+  opacity:.42;transition:opacity .35s,border-color .35s,transform .35s}
+#pellicule button img{width:100%;height:100%;object-fit:cover;display:block}
+#pellicule button::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:#FF6B35;transform:scaleX(0);transform-origin:left;transition:transform .3s}
+#pellicule button.actif{opacity:1;border-color:rgba(255,107,53,.65);transform:translateY(-2px)}
+#pellicule button.actif::after{transform:scaleX(1)}
+#pellicule button:focus-visible{outline:1.5px solid #FF6B35;outline-offset:2px}
+@media (max-width:720px){#ghostNum{display:none}#pellicule button{width:42px;height:25px}}
 </style>
 </head>
 <body>
@@ -289,6 +310,13 @@ body::before{
 
 <div id="forge"><span id="forgeLabel">ASSEMBLAGE</span><div class="bar"><i id="forgeFill"></i></div><span id="forgePct">0%</span></div>
 
+<div id="ghostNum" aria-hidden="true">I</div>
+<nav id="pellicule" aria-label="Navigation entre les photos du bien">
+  <button data-rush="0" aria-label="Photo 1 — Entrée"><img src="demo_entree.jpg" alt=""></button>
+  <button data-rush="1" aria-label="Photo 2 — Séjour"><img src="demo_sejour.jpg" alt=""></button>
+  <button data-rush="2" aria-label="Photo 3 — Cuisine"><img src="demo_cuisine.jpg" alt=""></button>
+  <button data-rush="3" aria-label="Photo 4 — Chambre"><img src="demo_chambre.jpg" alt=""></button>
+</nav>
 <div id="hud" aria-hidden="true">
   <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
   <span class="hud-corner bl"></span><span class="hud-corner br"></span>
@@ -868,69 +896,54 @@ const forgeLabel = document.getElementById("forgeLabel");
    => côtés  : droite · gauche · gauche (relais) · droite                    */
 const cartes = Array.from(document.querySelectorAll(".pcard"));
 const RUSHES = [
-  { debut: 0.04, cote: +1, tilt: -3.5 },
-  { debut: 0.33, cote: -1, tilt:  2.8 },
-  { debut: 0.49, cote: -1, tilt: -2.4 },
-  { debut: 0.68, cote: +1, tilt:  3.2 },
+  { debut: 0.03, cote: +1, tilt: -3.2 },
+  { debut: 0.30, cote: -1, tilt:  2.6 },
+  { debut: 0.47, cote: -1, tilt: -2.2 },
+  { debut: 0.66, cote: +1, tilt:  3.0 },
 ];
-const LARGEUR_RUSH = 0.22;                     // fenêtres qui se chevauchent : zéro temps mort
-const easeOutBack = (t) => { const c = 1.15; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
-const easeInCubic = (t) => t * t * t;
+const LARGEUR_RUSH = 0.26;
 const smooth = (t) => t * t * (3 - 2 * t);
 if (reduceMotion) cartes.forEach((el) => { el.style.display = "none"; });
 
-let qBallet = 0;                                   // le ballet a sa propre inertie :
-const OPAC = [0, 0, 0, 0];                         // le scroll rapide ne le brusque plus
+/* LA TRAVERSÉE — motion continu : chaque photo s'élève comme une braise,
+   dérive vers l'axe de l'œuvre, grandit à l'approche et se dissout en montant.
+   Une seule courbe par grandeur = aucune couture, scrub parfait. */
+let qBallet = 0;
+const OPAC = [0, 0, 0, 0];
 function majPhotos(q, temps) {
   if (reduceMotion || !cartes.length) return;
-  qBallet += (q - qBallet) * 0.07;                 // lissage ~15 frames
+  qBallet += (q - qBallet) * 0.085;
   const qs = qBallet;
   const W = window.innerWidth, H = window.innerHeight;
-  const AMPL = (W < 720 ? 0.22 : 0.27) * W;    // distance de la scène au centre
+  const AMPL = (W < 720 ? 0.23 : 0.28) * W;
   for (let i = 0; i < cartes.length; i++) {
     const el = cartes[i];
     const cfg = RUSHES[i];
-    const t = (qs - cfg.debut) / LARGEUR_RUSH;
-    if (t <= 0 || t >= 1.06) {
-      if (OPAC[i] > 0.004) {                       // hors fenêtre : on s'éteint en douceur
+    const p = (qs - cfg.debut) / LARGEUR_RUSH;
+    if (p <= 0 || p >= 1) {
+      if (OPAC[i] > 0.004) {
         OPAC[i] += (0 - OPAC[i]) * 0.14;
         el.style.opacity = OPAC[i].toFixed(3);
       } else if (el.style.opacity !== "0") { el.style.opacity = "0"; OPAC[i] = 0; }
       continue;
     }
-    const sceneX = cfg.cote * AMPL;
-
-    let x, y, s, r, o;
-    if (t < 0.26) {                 // ACTE 1 — l'entrée : arc élastique depuis le bas
-      const e = easeOutBack(clamp(t / 0.26, 0, 1));
-      x = lerp(sceneX + cfg.cote * 0.16 * W, sceneX, e);
-      y = lerp(0.44 * H, 0.02 * H, e) - Math.sin(e * Math.PI) * 0.03 * H;  // trajectoire bombée
-      s = lerp(0.84, 1, e);
-      r = lerp(cfg.tilt * 2.8, cfg.tilt, e);
-      o = smooth(clamp(t / 0.26, 0, 1));      // fondu d'apparition long et courbe
-    } else if (t < 0.62) {          // ACTE 2 — la scène : flottement à deux respirations
-      const h = (t - 0.26) / 0.36;
-      const d1 = Math.sin(temps * 0.62 + i * 2.1), d2 = Math.sin(temps * 1.31 + i * 4.7);
-      x = sceneX + d1 * 7 + d2 * 2.5;
-      y = 0.02 * H + Math.cos(temps * 0.5 + i * 1.4) * 9 + Math.cos(temps * 1.13 + i) * 3;
-      s = lerp(1, 1.05, smooth(h)) + d2 * 0.004;
-      r = cfg.tilt + d1 * 0.8;
-      o = 1;
-    } else {                        // ACTE 3 — l'absorption : arc courbe vers l'œuvre
-      const a = easeInCubic(clamp((t - 0.62) / 0.38, 0, 1));
-      const arc = Math.sin(a * Math.PI) * 0.09 * H;               // passe par le haut
-      x = lerp(sceneX, 0, smooth(a));
-      y = lerp(0.02 * H, -0.06 * H, a) - arc;
-      s = lerp(1.05, 0.12, a);
-      r = lerp(cfg.tilt, -cfg.tilt * 1.6, a);                     // léger vrillage en fondant
-      o = 1 - smooth(clamp((a - 0.28) / 0.68, 0, 1));   // fondu de sortie précoce et doux
-    }
+    /* cloche de présence : fondu long des deux côtés */
+    const bell = smooth(Math.min(1, p / 0.26)) * (1 - smooth(Math.max(0, (p - 0.7) / 0.3)));
+    /* dérive organique à deux respirations (temps réel) */
+    const d1 = Math.sin(temps * 0.55 + i * 2.1), d2 = Math.sin(temps * 1.27 + i * 4.7);
+    /* trajectoire : ascension lente, inclinaison progressive vers l'axe */
+    const x = cfg.cote * AMPL * (1 - 0.38 * p * p) + d1 * 6 + d2 * 2.2;
+    const y = (0.20 - 0.36 * p) * H + Math.cos(temps * 0.48 + i * 1.4) * 7;
+    const s = (0.92 + 0.15 * p) * (0.965 + 0.035 * bell) + d2 * 0.003;
+    const r = cfg.tilt * (1 - 0.45 * p) + d1 * 0.7;
     el.style.transform = "translate(-50%,-50%) translate3d(" + x.toFixed(1) + "px," +
       y.toFixed(1) + "px,0) rotate(" + r.toFixed(2) + "deg) scale(" + s.toFixed(3) + ")";
-    OPAC[i] += (o - OPAC[i]) * 0.18;               // l'opacité aussi a son amorti
+    OPAC[i] += (bell - OPAC[i]) * 0.18;
     el.style.opacity = OPAC[i].toFixed(3);
   }
+  majPellicule(qs);
 }
+
 /* HUD : télémétrie de forge (écritures DOM seulement au changement) */
 const hudEl = document.getElementById("hud"), railEl = document.getElementById("rail");
 const hudPct = document.getElementById("hudPct"), hudTc = document.getElementById("hudTc");
@@ -959,6 +972,41 @@ function majHud(q, temps) {
   if (q > 0.975) rush = "FLAMME — VIVANTE";
   if (rush !== hudMem.rush) { hudMem.rush = rush; hudRush.textContent = rush; }
 }
+
+/* Pellicule : reflet du ballet + navigation directe au clic */
+const pellicule = document.getElementById("pellicule");
+const pboutons = pellicule ? Array.from(pellicule.querySelectorAll("button")) : [];
+const ghostNum = document.getElementById("ghostNum");
+const ACTES = ["I", "II", "III"];
+let pelMem = -2, ghostMem = "";
+function majPellicule(qs) {
+  if (!pellicule) return;
+  let actif = -1;
+  for (let i = 0; i < RUSHES.length; i++) {
+    const p = (qs - RUSHES[i].debut) / LARGEUR_RUSH;
+    if (p > 0.1 && p < 0.9) { actif = i; break; }
+  }
+  if (actif !== pelMem) {
+    pelMem = actif;
+    pboutons.forEach((b, i) => b.classList.toggle("actif", i === actif));
+  }
+  const masque = qs > 0.94 ? "0" : "1";
+  if (pellicule.style.opacity !== masque) pellicule.style.opacity = masque;
+  if (ghostNum) {
+    const acte = qs > 0.94 ? "" : ACTES[qs < 0.32 ? 0 : qs < 0.68 ? 1 : 2];
+    if (acte !== ghostMem) { ghostMem = acte; ghostNum.textContent = acte; }
+  }
+}
+pboutons.forEach((b) => {
+  b.addEventListener("click", () => {
+    const i = +b.dataset.rush;
+    const cible = RUSHES[i].debut + LARGEUR_RUSH * 0.5;
+    const piste = document.getElementById("demo-track");
+    if (!piste) return;
+    const y = piste.offsetTop + cible * (piste.offsetHeight - innerHeight);
+    window.scrollTo({ top: y, behavior: "smooth" });
+  });
+});
 
 const demoFilm = document.getElementById("demoFilm");
 if (demoFilm && "IntersectionObserver" in window) {
