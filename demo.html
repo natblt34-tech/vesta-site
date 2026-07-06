@@ -256,9 +256,10 @@ body::before{
 #ghostNum{position:fixed;left:50%;top:48%;z-index:1;transform:translate(-50%,-50%);
   font-family:"Fraunces",serif;font-weight:300;font-style:italic;font-size:30vw;
   color:rgba(239,231,216,.04);pointer-events:none;user-select:none;line-height:1;
-  transition:opacity .6s ease}
+  opacity:1;transition:opacity .38s ease, transform .38s ease}
+#ghostNum.chg{opacity:0;transform:translate(-50%,-55%) scale(.96)}
 /* ===== Pellicule de navigation : les 4 rushes en pied de page ===== */
-#pellicule{position:fixed;left:50%;bottom:1.1rem;z-index:28;transform:translateX(-50%);
+#pellicule{position:fixed;left:50%;bottom:3.8rem;z-index:28;transform:translateX(-50%);
   display:flex;gap:.55rem;padding:.5rem .6rem;border-radius:8px;
   background:rgba(10,8,6,.4);backdrop-filter:blur(8px);
   border:1px solid rgba(239,231,216,.1);transition:opacity .5s ease}
@@ -994,7 +995,15 @@ function majPellicule(qs) {
   if (pellicule.style.opacity !== masque) pellicule.style.opacity = masque;
   if (ghostNum) {
     const acte = qs > 0.94 ? "" : ACTES[qs < 0.32 ? 0 : qs < 0.68 ? 1 : 2];
-    if (acte !== ghostMem) { ghostMem = acte; ghostNum.textContent = acte; }
+    if (acte !== ghostMem) {
+      ghostMem = acte;
+      ghostNum.classList.add("chg");                 // s'efface en glissant...
+      clearTimeout(ghostNum._t);
+      ghostNum._t = setTimeout(() => {
+        ghostNum.textContent = acte;                 // ...change dans l'ombre...
+        ghostNum.classList.remove("chg");            // ...et renaît en place
+      }, 380);
+    }
   }
 }
 pboutons.forEach((b) => {
