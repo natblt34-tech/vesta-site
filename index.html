@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vesta — Le studio de cinéma de vos mandats</title>
-<meta name="description" content="Vesta transforme les photos de vos mandats en films cinématiques grâce à l'IA. Sans drone, sans vidéaste, en quelques minutes.">
+<meta name="description" content="Vesta transforme les photos de vos mandats en films cinématiques grâce à l'IA. Sans drone, sans vidéaste, livrés en 48 h. Première vidéo offerte.">
 <!-- === SEO & partage social ================================================
      À la mise en ligne : remplacer les URL ci-dessous par le domaine réel
      et déposer une image og.jpg (1200x630) à la racine. -->
@@ -571,16 +571,15 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
 /* ===== Perf : sections sous la ligne de flottaison ===== */
 .benefits,.pricing,.studio,.faq{content-visibility:auto;contain-intrinsic-size:auto 100vh}
 
-/* ===== Clic dans le foyer : onde + lueur ===== */
-.click-ring{position:fixed;z-index:96;pointer-events:none;width:12px;height:12px;
-  border:1px solid rgba(255,140,80,.6);border-radius:50%;transform:translate(-50%,-50%);
-  animation:vring .7s cubic-bezier(.2,.7,.3,1) forwards}
-@keyframes vring{to{width:110px;height:110px;border-color:rgba(255,107,53,0)}}
-.click-glow{position:fixed;z-index:96;pointer-events:none;width:90px;height:90px;
-  border-radius:50%;transform:translate(-50%,-50%);
-  background:radial-gradient(circle, rgba(255,170,90,.35), rgba(255,107,53,.12) 45%, transparent 70%);
-  animation:vglow .55s ease-out forwards}
-@keyframes vglow{from{opacity:1;transform:translate(-50%,-50%) scale(.4)}to{opacity:0;transform:translate(-50%,-50%) scale(1.25)}}
+/* ===== Clic dans le foyer : micro-volute de fumée ===== */
+.click-smoke{position:fixed;z-index:96;pointer-events:none;width:34px;height:34px;
+  border-radius:50%;transform:translate(-50%,-50%);opacity:0;filter:blur(7px);
+  background:radial-gradient(circle at 45% 60%, rgba(214,200,182,.32), rgba(160,148,134,.14) 55%, transparent 75%);
+  animation:vsmoke 1.2s ease-out forwards}
+@keyframes vsmoke{
+  8%{opacity:.85}
+  to{opacity:0;transform:translate(-50%,-50%) translateY(-34px) translateX(6px) scale(1.9) rotate(14deg)}
+}
 /* ===== L'embrasement des boutons au clic ===== */
 .btn{position:relative;overflow:hidden}
 .btn .ign{position:absolute;left:var(--ix,50%);top:var(--iy,50%);width:8px;height:8px;
@@ -738,7 +737,7 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
       </h1>
       <p class="lead delayed d2">
         Vesta transforme les photos de vos mandats en films cinématiques.
-        En quelques minutes. Sans drone, sans vidéaste, sans re-shooting.
+        Livré en 48 h chrono. Sans drone, sans vidéaste, sans re-shooting.
       </p>
       <div class="hero-actions delayed d3">
         <a href="#studio" class="btn btn-ember">Générer ma première vidéo — offerte</a>
@@ -755,7 +754,7 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
   <div class="marquee" aria-hidden="true">
     <div class="marquee-track" id="marqueeTrack">
       <span>Mandat <b>→</b> Film <b>→</b> Signature</span>
-      <span>Rendu 4K en moins de 10 minutes</span>
+      <span>Rendu cinéma livré sous 48 h</span>
       <span>À partir des photos que vous avez <b>déjà</b></span>
       <span>Portails · Reels · Stories · WhatsApp vendeur</span>
     </div>
@@ -881,7 +880,7 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
           <article class="benefit">
             <span class="mono">R2 · Budget</span>
             <h3>Divisez le coût par vingt</h3>
-            <p>Un vidéaste, c'est 800 à 1 500 € et dix jours de délai. Vesta, c'est le prix d'un déjeuner et dix minutes d'attente.</p>
+            <p>Un vidéaste, c'est 300 à 800 € et deux semaines de délai. Vesta, c'est le prix d'un déjeuner et 48 h chrono.</p>
           </article>
           <article class="benefit">
             <span class="mono">R3 · Portails</span>
@@ -919,7 +918,7 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
             <ul class="plan-list">
               <li>1 vidéo offerte, sans carte bancaire</li>
               <li>Rendu HD, filigrane Vesta</li>
-              <li>Livraison sous 10 minutes</li>
+              <li>Livraison sous 48 h</li>
             </ul>
             <a href="#studio" class="btn btn-line btn-block">Essayer gratuitement</a>
           </article>
@@ -1022,7 +1021,7 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
           </details>
           <details class="faq-item">
             <summary>Combien de temps pour recevoir un film ?</summary>
-            <p>Moins de dix minutes dans la grande majorité des cas. Vous recevez un lien de téléchargement et les déclinaisons de format en une fois.</p>
+            <p>48 heures maximum, contrôle qualité humain inclus — chaque film est relu avant livraison. Vous recevez un lien de téléchargement et les déclinaisons de format en une fois.</p>
           </details>
         <details class="faq-item">
             <summary>L'IA invente-t-elle des meubles ou des pièces ?</summary>
@@ -1165,8 +1164,8 @@ window.VESTA_STATUE_URL = "vestalin_web.glb"; // version web 7,4 Mo (l'originale
         }
         c.w += (tw - c.w) * 0.16;
         if (c.w > 0.008) {
-          c.sp.style.transform = "scale(" + (1 + c.w * 0.32).toFixed(3) + ")";
-          c.sp.style.textShadow = "0 0 " + (c.w * 16).toFixed(0) + "px rgba(255,107,53," + (c.w * 0.35).toFixed(2) + ")";
+          c.sp.style.transform = "scale(" + (1 + c.w * 0.16).toFixed(3) + ")";
+          c.sp.style.textShadow = "0 0 " + (c.w * 10).toFixed(0) + "px rgba(255,107,53," + (c.w * 0.28).toFixed(2) + ")";
         } else if (c.sp.style.transform) {
           c.sp.style.transform = ""; c.sp.style.textShadow = "";
         }
@@ -1763,28 +1762,15 @@ window.addEventListener("pointerdown", (e) => {
   cursorForce = 1.6;
   const t = e.target;
   if (t && t.closest && t.closest("a,button,input,textarea,select,summary,label,.compare,[contenteditable]")) return;
-  /* souffle : étincelles vives + braises lentes, en cône ascendant */
-  for (let n = 0; n < 26; n++) {
-    const i = (Math.random() * COUNT) | 0, ix = i * 3;
-    const etincelle = n < 10;                            // 2 populations
-    const a = (Math.random() - 0.5) * Math.PI * 1.15 + Math.PI / 2;   // cône vers le haut
-    const sp = etincelle ? 1.8 + Math.random() * 2.2 : 0.35 + Math.random() * 0.9;
-    ePos[ix] = cursorW.x + (Math.random() - 0.5) * 0.08;
-    ePos[ix + 1] = cursorW.y + (Math.random() - 0.5) * 0.08;
-    ePos[ix + 2] = 0.2 + (Math.random() - 0.5) * 0.5;
-    eVel[ix] = Math.cos(a) * sp * (etincelle ? 1 : 0.7);
-    eVel[ix + 1] = Math.sin(a) * sp * (etincelle ? 1 : 0.75) + 0.25;
-    eVel[ix + 2] = (Math.random() - 0.5) * (etincelle ? 0.9 : 0.25);
-    eTw[i] = etincelle ? 2.6 + Math.random() * 1.6 : 1.1 + Math.random() * 1.2;
-  }
-  /* onde + lueur au point d'impact (DOM éphémère, coût nul) */
-  for (const cls of ["click-ring", "click-glow"]) {
+  /* micro-volute de fumée au point du clic — et c'est tout */
+  for (let n = 0; n < 2; n++) {
     const el = document.createElement("span");
-    el.className = cls;
-    el.style.left = e.clientX + "px";
-    el.style.top = e.clientY + "px";
+    el.className = "click-smoke";
+    el.style.left = (e.clientX + (n ? 9 : -6)) + "px";
+    el.style.top = (e.clientY + (n ? 3 : -2)) + "px";
+    el.style.animationDelay = (n * 0.09) + "s";
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 750);
+    setTimeout(() => el.remove(), 1300);
   }
 }, { passive: true });
 
