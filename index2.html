@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vesta — Le studio de cinéma de vos mandats</title>
+<meta name="description" content="Vesta transforme les photos de vos mandats en films cinématiques. Sans drone, sans vidéaste, livrés en 48 h. Première vidéo offerte.">
+<meta name="robots" content="noindex">
+<!-- Site V2 (test) : noindex tant que les deux versions coexistent -->
+<meta name="theme-color" content="#0A0806">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2C13 9 8 11 8 18a8 8 0 0 0 16 0c0-4-2-6-3-9-1 3-2 4-3 5 0-4-1-8-2-12z' fill='%23FF6B35'/%3E%3C/svg%3E">
+<link rel="preload" href="vestalin_web.glb" as="fetch" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300;1,400&family=Archivo:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0A0806; --bone:#EFE7D8; --ember:#FF6B35; --ember-hot:#FF8A50;
+  --dim:#8A8178; --line:rgba(239,231,216,.12);
+  --serif:"Fraunces",serif; --sans:"Archivo",sans-serif; --mono:"JetBrains Mono",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-snap-type:y proximity;scroll-behavior:smooth}
+body{background:var(--void);color:var(--bone);font-family:var(--sans);
+  overflow-x:hidden;cursor:none}
+a,button{cursor:none}
+em{font-style:italic;color:var(--ember-hot)}
+::selection{background:var(--ember);color:var(--void)}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:#0c0a08}
+::-webkit-scrollbar-thumb{background:#2a211a;border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:var(--ember)}
+:focus-visible{outline:1.5px solid var(--ember);outline-offset:3px}
+
+/* ============ GRAIN + VIGNETTE ============ */
+body::after{content:"";position:fixed;inset:-60px;z-index:88;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  opacity:.05;mix-blend-mode:soft-light;animation:grain 1.1s steps(4) infinite}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-24px,14px)}
+  50%{transform:translate(16px,-20px)}75%{transform:translate(-12px,-8px)}100%{transform:translate(0,0)}}
+body::before{content:"";position:fixed;inset:0;z-index:87;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 42%, transparent 60%, rgba(5,4,3,.55) 100%)}
+
+/* ============ PRÉLOADER : L'ALLUMAGE ============ */
+#allumage{position:fixed;inset:0;z-index:600;background:var(--void);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1.2rem;
+  transition:clip-path 1s cubic-bezier(.7,0,.2,1)}
+#allumage.parti{clip-path:inset(0 0 100% 0)}
+#allumage .pct{font-family:var(--serif);font-weight:300;font-size:clamp(4rem,12vw,9rem);
+  line-height:1;color:var(--bone);font-variant-numeric:tabular-nums}
+#allumage .lbl{font-family:var(--mono);font-size:.62rem;letter-spacing:.4em;color:var(--dim)}
+#allumage .meche{width:min(320px,60vw);height:1px;background:var(--line);position:relative;overflow:visible}
+#allumage .meche i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#5a2510,var(--ember));display:block;
+  box-shadow:0 0 14px rgba(255,107,53,.8)}
+
+/* ============ CANVAS MONDE ============ */
+#monde{position:fixed;inset:0;z-index:0;width:100vw;height:100vh;display:block}
+
+/* ============ CURSEUR ============ */
+#curseur{position:fixed;top:0;left:0;z-index:500;pointer-events:none}
+#curseur .pt{position:fixed;width:5px;height:5px;border-radius:50%;background:var(--ember);
+  transform:translate(-50%,-50%)}
+#curseur .an{position:fixed;width:34px;height:34px;border-radius:50%;
+  border:1px solid rgba(255,107,53,.5);transform:translate(-50%,-50%);
+  display:flex;align-items:center;justify-content:center;
+  transition:width .3s,height .3s,background .3s}
+#curseur .an span{font-family:var(--mono);font-size:.52rem;letter-spacing:.14em;color:var(--void);
+  opacity:0;transition:opacity .2s;white-space:nowrap}
+#curseur.actif .an{width:66px;height:66px;background:rgba(255,107,53,.92);border-color:transparent}
+#curseur.actif .an span{opacity:1}
+@media (pointer:coarse){#curseur{display:none}body,a,button{cursor:auto}}
+
+/* ============ CHROME : header + HUD chapitres ============ */
+header{position:fixed;inset:0 0 auto;z-index:100;display:flex;justify-content:space-between;
+  align-items:center;padding:1.4rem clamp(1.4rem,4vw,3rem);mix-blend-mode:difference}
+.marque{display:flex;align-items:center;gap:.7rem;text-decoration:none;color:var(--bone)}
+.marque svg{width:22px;height:22px}
+.marque b{font-family:var(--serif);font-weight:400;letter-spacing:.34em;font-size:.9rem}
+header nav{display:flex;gap:1.6rem;align-items:center}
+header nav a{font-family:var(--mono);font-size:.62rem;letter-spacing:.22em;color:var(--bone);
+  text-decoration:none;text-transform:uppercase;opacity:.75;transition:opacity .3s}
+header nav a:hover{opacity:1}
+header nav a.cta{border:1px solid var(--bone);border-radius:999px;padding:.55rem 1.1rem;opacity:1}
+
+#chapitre{position:fixed;left:clamp(1.4rem,4vw,3rem);bottom:2rem;z-index:90;
+  display:flex;flex-direction:column;gap:.4rem;pointer-events:none}
+#chapitre .mot{font-family:var(--mono);font-size:.62rem;letter-spacing:.34em;color:var(--ember);
+  text-transform:uppercase;transition:opacity .35s,transform .35s}
+#chapitre .mot.chg{opacity:0;transform:translateY(6px)}
+#chapitre .idx{font-family:var(--mono);font-size:.58rem;letter-spacing:.22em;color:var(--dim)}
+#navsc{position:fixed;right:clamp(1.4rem,4vw,3rem);bottom:2rem;z-index:90;display:flex;gap:1.4rem}
+#navsc button{all:unset;font-family:var(--mono);font-size:.62rem;letter-spacing:.22em;
+  color:var(--dim);text-transform:uppercase;transition:color .3s;padding:.3rem 0}
+#navsc button:hover{color:var(--ember)}
+#barre{position:fixed;top:0;left:0;right:0;height:2px;z-index:110;background:transparent}
+#barre i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#5a2510,var(--ember));
+  transform:scaleX(0);transform-origin:left}
+@media (max-width:720px){#navsc{display:none}}
+
+/* ============ SCÈNES ============ */
+main{position:relative;z-index:2}
+.scene{min-height:100vh;scroll-snap-align:start;position:relative;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(5rem,12vh,8rem) clamp(1.4rem,6vw,6rem)}
+.scene .slate{font-family:var(--mono);font-size:.66rem;letter-spacing:.32em;color:var(--ember);
+  text-transform:uppercase;margin-bottom:2rem;display:flex;align-items:center;gap:1rem}
+.scene .slate::before{content:"";width:34px;height:1px;background:var(--ember)}
+.titan{font-family:var(--serif);font-weight:300;line-height:1.02;
+  font-size:clamp(2.6rem,8.4vw,8rem);letter-spacing:-.01em;max-width:14ch}
+.titan .l{display:block;overflow:hidden}
+.titan .l>span{display:inline-block;transform:translateY(115%);transition:transform 1s cubic-bezier(.22,1,.3,1)}
+.scene.in .titan .l>span{transform:translateY(0)}
+.titan .l:nth-child(2)>span{transition-delay:.08s}
+.titan .l:nth-child(3)>span{transition-delay:.16s}
+.titan .l:nth-child(4)>span{transition-delay:.24s}
+.scene p.px{max-width:44ch;line-height:1.75;color:var(--dim);font-size:clamp(.95rem,1.2vw,1.1rem);
+  margin-top:2.2rem;opacity:0;transform:translateY(18px);transition:opacity .9s ease .35s,transform .9s ease .35s}
+.scene.in p.px{opacity:1;transform:none}
+.lien{display:inline-flex;align-items:center;gap:.9rem;margin-top:2.6rem;text-decoration:none;
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.26em;text-transform:uppercase;color:var(--bone);
+  opacity:0;transform:translateY(14px);transition:opacity .9s ease .5s,transform .9s ease .5s;
+  position:relative;width:max-content}
+.scene.in .lien{opacity:1;transform:none}
+.lien::after{content:"";position:absolute;left:0;bottom:-7px;height:1px;width:100%;
+  background:var(--ember);transform:scaleX(.35);transform-origin:left;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.lien:hover::after{transform:scaleX(1)}
+.lien i{font-style:normal;color:var(--ember);transition:transform .35s}
+.lien:hover i{transform:translateX(6px)}
+
+/* Hero : place à la statue à droite */
+#s1 .titan{max-width:12ch}
+#s1 .reassurance{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--dim);
+  margin-top:1.6rem;opacity:0;transition:opacity 1s ease .7s}
+#s1.in .reassurance{opacity:.8}
+
+/* ============ SCÈNE LA PREUVE : comparateur plein cadre ============ */
+#s2{padding-left:0;padding-right:0}
+#s2 .entete{padding:0 clamp(1.4rem,6vw,6rem)}
+.cadreur{position:relative;margin-top:2.6rem;height:min(72vh,760px);overflow:hidden;
+  border-block:1px solid var(--line)}
+.cadreur img,.cadreur video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.cadreur .apres{position:absolute;inset:0;clip-path:inset(0 0 0 var(--cx,50%))}
+.cadreur .manche{position:absolute;top:0;bottom:0;left:var(--cx,50%);width:1px;
+  background:rgba(239,231,216,.75);z-index:5}
+.cadreur .manche::after{content:"⟷";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:52px;height:52px;border-radius:50%;background:var(--void);border:1px solid rgba(255,107,53,.6);
+  color:var(--ember);display:flex;align-items:center;justify-content:center;font-size:1rem}
+.cadreur .tag{position:absolute;bottom:1.2rem;font-family:var(--mono);font-size:.6rem;
+  letter-spacing:.24em;color:var(--bone);background:rgba(10,8,6,.55);backdrop-filter:blur(6px);
+  padding:.45rem .8rem;border-radius:4px;z-index:4}
+.cadreur .tag.g{left:1.4rem}
+.cadreur .tag.d{right:1.4rem;border:1px solid rgba(255,107,53,.35)}
+
+/* ============ SCÈNE FILM : plein écran ============ */
+#s4{padding:0;justify-content:flex-end}
+#s4 video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;
+  filter:brightness(.85)}
+#s4 .voile{position:absolute;inset:0;z-index:1;
+  background:linear-gradient(180deg, rgba(10,8,6,.55) 0%, transparent 34%, transparent 60%, rgba(10,8,6,.82) 100%)}
+#s4 .contenu{position:relative;z-index:2;padding:0 clamp(1.4rem,6vw,6rem) clamp(4rem,10vh,7rem)}
+#s4 .chip{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--mono);
+  font-size:.6rem;letter-spacing:.22em;color:var(--bone);
+  background:rgba(10,8,6,.55);backdrop-filter:blur(6px);
+  padding:.45rem .8rem;border-radius:4px;border:1px solid rgba(255,107,53,.35);margin-bottom:1.6rem}
+#s4 .chip i{color:#ff3b30;font-style:normal;animation:rec 1.6s steps(2) infinite}
+@keyframes rec{50%{opacity:.25}}
+
+/* ============ SCÈNE LA MÉTHODE : trois temps en lignes ============ */
+.temps{margin-top:3rem;border-top:1px solid var(--line)}
+.temps .t{display:grid;grid-template-columns:auto 1fr auto;gap:2rem;align-items:baseline;
+  padding:1.9rem 0;border-bottom:1px solid var(--line);
+  opacity:0;transform:translateY(16px);transition:opacity .8s ease,transform .8s ease}
+.scene.in .temps .t{opacity:1;transform:none}
+.scene.in .temps .t:nth-child(2){transition-delay:.12s}
+.scene.in .temps .t:nth-child(3){transition-delay:.24s}
+.temps .no{font-family:var(--serif);font-style:italic;font-weight:300;
+  font-size:clamp(1.6rem,3vw,2.6rem);color:var(--ember);min-width:2ch}
+.temps h3{font-family:var(--serif);font-weight:400;font-size:clamp(1.15rem,2vw,1.7rem)}
+.temps small{display:block;color:var(--dim);margin-top:.5rem;font-size:.92rem;line-height:1.6;max-width:52ch}
+.temps .mn{font-family:var(--mono);font-size:.6rem;letter-spacing:.22em;color:var(--dim)}
+
+/* ============ SCÈNE PRIX : rangées monumentales ============ */
+.offres{margin-top:2.6rem;border-top:1px solid var(--line)}
+.offre{display:grid;grid-template-columns:1fr auto;gap:1rem 2.5rem;align-items:center;
+  padding:2.1rem 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit;
+  position:relative;transition:padding .4s cubic-bezier(.2,.8,.2,1);
+  opacity:0;transform:translateY(16px)}
+.scene.in .offre{opacity:1;transform:none;transition:opacity .8s ease,transform .8s ease,padding .4s cubic-bezier(.2,.8,.2,1)}
+.scene.in .offre:nth-child(2){transition-delay:.1s}
+.scene.in .offre:nth-child(3){transition-delay:.2s}
+.offre::before{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:var(--ember);transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.offre:hover::before{transform:scaleX(1)}
+.offre:hover{padding-left:1.2rem}
+.offre .nom{font-family:var(--serif);font-weight:300;font-size:clamp(1.8rem,4.6vw,3.6rem);line-height:1.1}
+.offre .nom small{display:block;font-family:var(--sans);font-size:.9rem;color:var(--dim);margin-top:.5rem;max-width:52ch;line-height:1.6}
+.offre .prix{font-family:var(--serif);font-weight:300;font-size:clamp(2rem,5.4vw,4.4rem);
+  font-variant-numeric:tabular-nums;text-align:right;line-height:1}
+.offre .prix small{display:block;font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;color:var(--dim);margin-top:.5rem}
+.offre .badge{position:absolute;top:1.1rem;left:0;font-family:var(--mono);font-size:.55rem;
+  letter-spacing:.24em;color:var(--ember)}
+.ancrage{margin-top:2rem;font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;color:var(--dim)}
+.ancrage b{color:var(--ember);font-weight:400}
+
+/* ============ SCÈNE FINALE + FOOTER ============ */
+#s7{justify-content:flex-end;padding-bottom:0}
+#s7 .fin{margin-bottom:clamp(3rem,9vh,6rem)}
+.questions{margin-top:2.4rem;max-width:640px}
+.questions details{border-top:1px solid var(--line);padding:1rem 0}
+.questions summary{list-style:none;font-family:var(--sans);font-size:.95rem;display:flex;
+  justify-content:space-between;gap:1rem;color:var(--bone)}
+.questions summary::-webkit-details-marker{display:none}
+.questions summary::after{content:"+";color:var(--ember);font-family:var(--mono)}
+.questions details[open] summary::after{content:"−"}
+.questions details p{color:var(--dim);line-height:1.7;padding:.9rem 0 .4rem;font-size:.92rem;max-width:56ch}
+.colossal{font-family:var(--serif);font-weight:300;font-size:clamp(4rem,17.5vw,17rem);
+  line-height:.86;letter-spacing:.05em;text-align:center;
+  color:transparent;-webkit-text-stroke:1px rgba(239,231,216,.22);
+  user-select:none;transform:translateY(12%)}
+footer{position:relative;z-index:2;border-top:1px solid var(--line);
+  display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between;align-items:center;
+  padding:1.4rem clamp(1.4rem,6vw,6rem);font-family:var(--mono);font-size:.6rem;
+  letter-spacing:.2em;color:var(--dim)}
+footer a{color:var(--dim);text-decoration:none}
+footer a:hover{color:var(--ember)}
+
+/* ============ FUMÉE AU CLIC ============ */
+.click-smoke{position:fixed;z-index:96;pointer-events:none;width:34px;height:34px;
+  border-radius:50%;transform:translate(-50%,-50%);opacity:0;filter:blur(7px);
+  background:radial-gradient(circle at 45% 60%, rgba(214,200,182,.32), rgba(160,148,134,.14) 55%, transparent 75%);
+  animation:vsmoke 1.2s ease-out forwards}
+@keyframes vsmoke{8%{opacity:.85}
+  to{opacity:0;transform:translate(-50%,-50%) translateY(-34px) translateX(6px) scale(1.9) rotate(14deg)}}
+
+@media (max-width:720px){
+  body::after{display:none}
+  html{scroll-snap-type:none}
+  .titan{font-size:clamp(2.4rem,11vw,4rem)}
+  .offre .prix{font-size:2rem}
+}
+@media (prefers-reduced-motion: reduce){
+  body::after{animation:none}
+  .titan .l>span{transition:none;transform:none}
+  .scene p.px,.scene .lien,.temps .t,.offre{transition:none;opacity:1;transform:none}
+  html{scroll-behavior:auto;scroll-snap-type:none}
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:2rem;font-family:sans-serif">Vesta est une expérience interactive — activez JavaScript. La première vidéo est offerte.</p></noscript>
+
+<!-- ============ PRÉLOADER : L'ALLUMAGE ============ -->
+<div id="allumage" aria-hidden="true">
+  <span class="pct" id="alluPct">0%</span>
+  <span class="meche"><i id="alluMeche"></i></span>
+  <span class="lbl" id="alluLbl">ON ALLUME LE FOYER</span>
+</div>
+
+<!-- ============ MONDE 3D ============ -->
+<canvas id="monde" aria-hidden="true"></canvas>
+
+<!-- ============ CHROME ============ -->
+<div id="barre" aria-hidden="true"><i id="barreFill"></i></div>
+<header>
+  <a class="marque" href="./index2.html" data-cursor="Foyer">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2C13 9 8 11 8 18a8 8 0 0 0 16 0c0-4-2-6-3-9-1 3-2 4-3 5 0-4-1-8-2-12z" fill="#FF6B35"/></svg>
+    <b>VESTA</b>
+  </a>
+  <nav>
+    <a href="demo.html" data-cursor="Forger">La forge</a>
+    <a href="#s6">Prix</a>
+    <a class="cta" href="#s7" data-cursor="Allumer">Ma 1<sup>re</sup> vidéo — offerte</a>
+  </nav>
+</header>
+<div id="chapitre" aria-hidden="true">
+  <span class="mot" id="chapMot">L'étincelle</span>
+  <span class="idx"><b id="chapIdx">01</b> / 07</span>
+</div>
+<div id="navsc" aria-hidden="true">
+  <button id="prevSc" data-cursor="">Préc.</button>
+  <button id="nextSc" data-cursor="">Suiv.</button>
+</div>
+
+<main id="haut">
+  <!-- ======== 01 · L'ÉTINCELLE ======== -->
+  <section class="scene" id="s1" data-chapitre="L'étincelle">
+    <span class="slate">Vidéos immobilières par IA</span>
+    <h1 class="titan">
+      <span class="l"><span>Vos annonces</span></span>
+      <span class="l"><span>ont des photos.</span></span>
+      <span class="l"><span><em>Vos concurrents</em></span></span>
+      <span class="l"><span><em>ont des films.</em></span></span>
+    </h1>
+    <p class="px">Vesta transforme les photos de vos mandats en films cinématiques.
+    Livré en 48 h chrono. Sans drone, sans vidéaste, sans re-shooting.</p>
+    <a class="lien" href="#s2">Voir la preuve <i>→</i></a>
+    <span class="reassurance">SANS ENGAGEMENT · SANS CARTE BANCAIRE · PREMIÈRE VIDÉO OFFERTE</span>
+  </section>
+
+  <!-- ======== 02 · LA PREUVE ======== -->
+  <section class="scene" id="s2" data-chapitre="La preuve">
+    <div class="entete">
+      <span class="slate">La preuve avant la promesse</span>
+      <h2 class="titan">
+        <span class="l"><span>La même pièce.</span></span>
+        <span class="l"><span>Avant. <em>Après.</em></span></span>
+      </h2>
+    </div>
+    <div class="cadreur" id="cadreur" data-cursor="Glisser" role="slider" tabindex="0"
+         aria-label="Comparateur photo d'origine et film généré" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+      <img src="compare_avant.jpg" alt="Photo d'origine du bien" loading="lazy" decoding="async">
+      <div class="apres">
+        <video id="cmpVideo" poster="compare_apres.jpg" muted loop playsinline preload="metadata"
+               aria-label="Film généré par Vesta en lecture"><source src="preuve.mp4" type="video/mp4"></video>
+      </div>
+      <span class="manche" aria-hidden="true"></span>
+      <span class="tag g">PHOTO D'ORIGINE</span>
+      <span class="tag d">FILM VESTA · 24 FPS</span>
+    </div>
+  </section>
+
+  <!-- ======== 03 · LA MÉTHODE ======== -->
+  <section class="scene" id="s3" data-chapitre="La méthode">
+    <span class="slate">La méthode</span>
+    <h2 class="titan">
+      <span class="l"><span>Chaque plan démarre</span></span>
+      <span class="l"><span>de votre photo.</span></span>
+      <span class="l"><span><em>Pixel pour pixel.</em></span></span>
+    </h2>
+    <div class="temps">
+      <div class="t">
+        <span class="no">I</span>
+        <div><h3>Vous envoyez les photos</h3>
+        <small>Une par pièce, prises depuis l'entrée, portes ouvertes sur le parcours. Notre fiche de prise de vue tient en trois règles.</small></div>
+        <span class="mn">5 MIN</span>
+      </div>
+      <div class="t">
+        <span class="no">II</span>
+        <div><h3>Le foyer forge le film</h3>
+        <small>La caméra traverse le bien comme au cinéma — les meubles de la photo, rien que les meubles de la photo. Relecture humaine sur chaque film.</small></div>
+        <span class="mn">48 H</span>
+      </div>
+      <div class="t">
+        <span class="no">III</span>
+        <div><h3>Vous diffusez partout</h3>
+        <small>16:9 pour les portails, vertical pour vos réseaux. Un lien, toutes les déclinaisons.</small></div>
+        <span class="mn">1 LIEN</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== 04 · LE FILM ======== -->
+  <section class="scene" id="s4" data-chapitre="Le film">
+    <video id="grandFilm" poster="preuve_poster.jpg" muted loop playsinline preload="metadata"
+           aria-label="Film immobilier complet généré par Vesta"><source src="preuve.mp4" type="video/mp4"></video>
+    <div class="voile" aria-hidden="true"></div>
+    <div class="contenu">
+      <span class="chip"><i>●</i>&nbsp;BIEN DE DÉMONSTRATION · PIPELINE RÉEL</span>
+      <h2 class="titan">
+        <span class="l"><span>Quatre photos.</span></span>
+        <span class="l"><span>Zéro caméra</span></span>
+        <span class="l"><span><em>sur place.</em></span></span>
+      </h2>
+      <a class="lien" href="#s5">Comment la statue se forge <i>→</i></a>
+    </div>
+  </section>
+
+  <!-- ======== 05 · LA FORGE ======== -->
+  <section class="scene" id="s5" data-chapitre="La forge">
+    <span class="slate">L'expérience</span>
+    <h2 class="titan">
+      <span class="l"><span>La matière brute</span></span>
+      <span class="l"><span>devient <em>œuvre.</em></span></span>
+    </h2>
+    <p class="px">Scrollez à travers la forge : les fragments s'assemblent, la flamme s'allume,
+    vos photos deviennent un film. Deux minutes immersives — notre manifeste, en actes.</p>
+    <a class="lien" href="demo.html" data-cursor="Forger">Entrer dans la forge <i>→</i></a>
+  </section>
+
+  <!-- ======== 06 · LE PRIX ======== -->
+  <section class="scene" id="s6" data-chapitre="Le prix">
+    <span class="slate">Le prix du feu</span>
+    <h2 class="titan">
+      <span class="l"><span>Le prix</span></span>
+      <span class="l"><span>d'un <em>déjeuner.</em></span></span>
+    </h2>
+    <div class="offres">
+      <a class="offre" href="#s7" data-cursor="Choisir">
+        <div class="nom">Étincelle<small>La première vidéo, offerte. Jugez sur pièce, sur un bien de votre vitrine.</small></div>
+        <div class="prix">0 €<small>POUR TOUJOURS</small></div>
+      </a>
+      <a class="offre" href="#s7" data-cursor="Choisir">
+        <span class="badge">LE CHOIX DES AGENTS</span>
+        <div class="nom">Flamme<small>5 vidéos par mois, sans filigrane, formats portails et réseaux.</small></div>
+        <div class="prix">29 €<small>PAR MOIS</small></div>
+      </a>
+      <a class="offre" href="#s7" data-cursor="Choisir">
+        <div class="nom">Brasier<small>Vidéos illimitées, priorité de rendu, déclinaisons sur mesure pour vos mandats d'exception.</small></div>
+        <div class="prix">149 €<small>PAR MOIS</small></div>
+      </a>
+    </div>
+    <p class="ancrage">UN VIDÉASTE FACTURE <b>300 À 800 €</b> PAR BIEN, SOUS 2 SEMAINES. VESTA LIVRE EN <b>48 H</b>.</p>
+  </section>
+
+  <!-- ======== 07 · LE FOYER ======== -->
+  <section class="scene" id="s7" data-chapitre="Le foyer">
+    <div class="fin">
+      <span class="slate">Le foyer vous attend</span>
+      <h2 class="titan">
+        <span class="l"><span>La première flamme</span></span>
+        <span class="l"><span>est <em>offerte.</em></span></span>
+      </h2>
+      <p class="px">Envoyez les photos d'un bien de votre vitrine. Vous recevez votre film sous 48 h,
+      relu par un œil humain, prêt pour les portails et les réseaux. Jugez sur pièce.</p>
+      <a class="lien" href="mailto:contact@vesta.example?subject=Ma%20premi%C3%A8re%20vid%C3%A9o%20offerte" data-cursor="Allumer">Allumer mon foyer <i>→</i></a>
+      <div class="questions">
+        <details>
+          <summary>L'IA invente-t-elle des meubles ou des pièces ?</summary>
+          <p>Non — c'est le cœur de notre méthode. Chaque plan démarre de votre photo, pixel pour pixel :
+          le modèle n'anime que le mouvement de caméra. Et chaque film passe une relecture humaine avant livraison.</p>
+        </details>
+        <details>
+          <summary>Comment prendre les photos ?</summary>
+          <p>Trois règles : chaque pièce depuis son entrée, dans le sens de la visite ; portes ouvertes
+          sur les pièces à montrer ; hors du champ des miroirs. La fiche complète est remise à l'inscription.</p>
+        </details>
+        <details>
+          <summary>Et si le résultat ne me plaît pas ?</summary>
+          <p>La première vidéo est offerte, sans carte bancaire : le seul risque est d'avoir un film en plus.
+          Sur abonnement, chaque vidéo peut être régénérée avec vos retours.</p>
+        </details>
+      </div>
+    </div>
+    <div class="colossal" aria-hidden="true">VESTA</div>
+  </section>
+</main>
+
+<footer>
+  <span>VESTA © 2026 — CONÇU ET FORGÉ À TOULOUSE</span>
+  <a href="demo.html">LA FORGE</a>
+  <a href="./">VERSION CLASSIQUE</a>
+</footer>
+
+<div id="curseur" aria-hidden="true">
+  <span class="an"><span id="curLbl"></span></span>
+  <span class="pt"></span>
+</div>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+/* ============================================================
+   LE MONDE — statue continue + braises, fil rouge des chapitres
+   ============================================================ */
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isCoarse = matchMedia("(pointer: coarse)").matches;
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+const canvas = document.getElementById("monde");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.06;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(34, innerWidth / innerHeight, 0.1, 60);
+camera.position.set(0, 1.15, 7.2);
+
+scene.add(new THREE.AmbientLight(0x241a12, 1.5));
+const cle = new THREE.DirectionalLight(0xffd9b0, 2.4); cle.position.set(3.4, 5, 4); scene.add(cle);
+const contre = new THREE.DirectionalLight(0xff6b35, 1.1); contre.position.set(-4, 2.2, -3); scene.add(contre);
+const braiseSol = new THREE.PointLight(0xff5a20, 2.2, 9, 1.8); braiseSol.position.set(1.9, -0.6, 1.2); scene.add(braiseSol);
+
+/* -------- PRÉLOADER branché sur le vrai chargement -------- */
+const alluPct = document.getElementById("alluPct");
+const alluMeche = document.getElementById("alluMeche");
+const alluLbl = document.getElementById("alluLbl");
+const allumage = document.getElementById("allumage");
+let pctAffiche = 0, pctCible = 0, alluFini = false;
+function bouclePct() {
+  if (alluFini) return;
+  pctAffiche = lerp(pctAffiche, pctCible, 0.12);
+  const p = Math.round(pctAffiche);
+  alluPct.textContent = p + "%";
+  alluMeche.style.width = p + "%";
+  if (p >= 100) {
+    alluFini = true;
+    alluLbl.textContent = "LE FOYER EST ALLUMÉ";
+    setTimeout(() => allumage.classList.add("parti"), 520);
+    setTimeout(() => allumage.remove(), 1700);
+    return;
+  }
+  requestAnimationFrame(bouclePct);
+}
+bouclePct();
+setTimeout(() => { pctCible = 100; }, 9000);   // filet : jamais bloqué sur l'écran noir
+
+/* -------- La statue -------- */
+let statue = null;
+const chargeur = new GLTFLoader();
+chargeur.load("vestalin_web.glb",
+  (gltf) => {
+    statue = gltf.scene;
+    const boite = new THREE.Box3().setFromObject(statue);
+    const centre = boite.getCenter(new THREE.Vector3());
+    const taille = boite.getSize(new THREE.Vector3());
+    statue.position.sub(centre);
+    const ech = 3.3 / Math.max(taille.x, taille.y, taille.z);
+    statue.scale.setScalar(ech);
+    const porteur = new THREE.Group();
+    porteur.add(statue);
+    porteur.position.set(innerWidth > 900 ? 1.55 : 0, 0.18, 0);
+    porteur.rotation.y = -0.2;
+    scene.add(porteur);
+    statue = porteur;
+    pctCible = 100;
+  },
+  (ev) => { if (ev.total) pctCible = Math.min(96, (ev.loaded / ev.total) * 100); else pctCible = Math.min(pctCible + 4, 92); },
+  () => { pctCible = 100; }   // échec GLB : on entre quand même
+);
+
+/* -------- Les braises -------- */
+const COUNT = isCoarse ? 130 : 260;
+const eGeo = new THREE.BufferGeometry();
+const ePos = new Float32Array(COUNT * 3), eVel = new Float32Array(COUNT * 3);
+const ePh = new Float32Array(COUNT), eTw = new Float32Array(COUNT), eSz = new Float32Array(COUNT);
+function spawn(i, bas) {
+  const ix = i * 3;
+  ePos[ix] = (Math.random() - 0.5) * 11;
+  ePos[ix + 1] = bas ? -3.4 - Math.random() : (Math.random() - 0.5) * 7;
+  ePos[ix + 2] = (Math.random() - 0.5) * 3.4;
+  eVel[ix] = (Math.random() - 0.5) * 0.05;
+  eVel[ix + 1] = 0.05 + Math.random() * 0.16;
+  eVel[ix + 2] = (Math.random() - 0.5) * 0.03;
+  ePh[i] = Math.random() * Math.PI * 2;
+  eTw[i] = 0.7 + Math.random() * 2.2;
+  eSz[i] = 0.5 + Math.random();
+}
+for (let i = 0; i < COUNT; i++) spawn(i, false);
+eGeo.setAttribute("position", new THREE.BufferAttribute(ePos, 3));
+eGeo.setAttribute("aSize", new THREE.BufferAttribute(eSz, 1));
+const spriteCv = document.createElement("canvas");
+spriteCv.width = spriteCv.height = 64;
+const sctx = spriteCv.getContext("2d");
+const grad = sctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+grad.addColorStop(0, "rgba(255,220,170,1)");
+grad.addColorStop(0.35, "rgba(255,140,70,.85)");
+grad.addColorStop(1, "rgba(255,90,30,0)");
+sctx.fillStyle = grad; sctx.fillRect(0, 0, 64, 64);
+const eMat = new THREE.PointsMaterial({
+  size: 0.09, map: new THREE.CanvasTexture(spriteCv),
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  color: 0xffb27a, opacity: 0.9,
+});
+const embers = new THREE.Points(eGeo, eMat);
+scene.add(embers);
+
+/* Curseur dans le monde (répulsion douce) */
+const souris = { px: 0.5, py: 0.5 };
+addEventListener("pointermove", (e) => {
+  souris.px = e.clientX / innerWidth; souris.py = e.clientY / innerHeight;
+}, { passive: true });
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), cw = new THREE.Vector3(999, 999, 0);
+function majCurseurMonde() {
+  ndc.set(souris.px * 2 - 1, -(souris.py * 2 - 1));
+  ray.setFromCamera(ndc, camera);
+  const t = (0.2 - ray.ray.origin.z) / ray.ray.direction.z;
+  if (t > 0) cw.copy(ray.ray.origin).addScaledVector(ray.ray.direction, t);
+}
+
+/* Fumée au clic dans le vide */
+addEventListener("pointerdown", (e) => {
+  const t = e.target;
+  if (t && t.closest && t.closest("a,button,input,textarea,select,summary,label,.cadreur")) return;
+  for (let n = 0; n < 2; n++) {
+    const el = document.createElement("span");
+    el.className = "click-smoke";
+    el.style.left = (e.clientX + (n ? 9 : -6)) + "px";
+    el.style.top = (e.clientY + (n ? 3 : -2)) + "px";
+    el.style.animationDelay = (n * 0.09) + "s";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1300);
+  }
+}, { passive: true });
+
+/* -------- Progression de page -------- */
+let prog = 0;
+const barreFill = document.getElementById("barreFill");
+function majProg() {
+  const max = document.documentElement.scrollHeight - innerHeight;
+  prog = max > 0 ? clamp(scrollY / max, 0, 1) : 0;
+  barreFill.style.transform = "scaleX(" + prog.toFixed(4) + ")";
+}
+addEventListener("scroll", majProg, { passive: true });
+majProg();
+
+/* -------- Boucle -------- */
+let last = performance.now();
+function boucle(now) {
+  requestAnimationFrame(boucle);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const t = now / 1000;
+  majCurseurMonde();
+  if (statue) {
+    statue.rotation.y = -0.2 + prog * 2.05 + Math.sin(t * 0.22) * 0.02;
+    statue.position.y = 0.18 + Math.sin(t * 0.5) * 0.035;
+  }
+  braiseSol.intensity = 2 + Math.sin(t * 2.3) * 0.35 + Math.sin(t * 5.1) * 0.15;
+  if (!reduceMotion) {
+    const damp = Math.pow(0.3, dt), R = 1.4, R2 = R * R;
+    for (let i = 0; i < COUNT; i++) {
+      const ix = i * 3;
+      let x = ePos[ix] + (eVel[ix] + Math.sin(t * 0.8 + ePh[i]) * 0.08) * dt;
+      let y = ePos[ix + 1] + eVel[ix + 1] * dt;
+      let z = ePos[ix + 2] + (eVel[ix + 2] + Math.cos(t * 0.6 + ePh[i]) * 0.04) * dt;
+      const dx = x - cw.x, dy = y - cw.y, d2 = dx * dx + dy * dy;
+      if (d2 < R2 && d2 > 0.0001) {
+        const d = Math.sqrt(d2), f = 1 - d / R;
+        const push = f * f * 3 * dt;
+        eVel[ix] += (dx / d) * push;
+        eVel[ix + 1] += (dy / d) * push + f * 0.5 * dt;
+      }
+      eVel[ix] *= damp; eVel[ix + 2] *= damp;
+      eVel[ix + 1] = lerp(eVel[ix + 1], 0.05 + eTw[i] * 0.05, 1 - Math.pow(0.5, dt));
+      if (y > 5.6 || x < -6 || x > 6) { spawn(i, true); continue; }
+      ePos[ix] = x; ePos[ix + 1] = y; ePos[ix + 2] = z;
+    }
+    eGeo.attributes.position.needsUpdate = true;
+    eMat.opacity = 0.75 + Math.sin(t * 1.7) * 0.12;
+  }
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(boucle);
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  if (statue) statue.position.x = innerWidth > 900 ? 1.55 : 0;
+  majProg();
+});
+</script>
+
+<script>
+/* ============================================================
+   CHROME — chapitres, révélations, comparateur, curseur, vidéos
+   ============================================================ */
+(function () {
+  "use strict";
+  var reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+
+  /* ---- Révélations + chapitre courant ---- */
+  var scenes = Array.prototype.slice.call(document.querySelectorAll(".scene"));
+  var chapMot = document.getElementById("chapMot");
+  var chapIdx = document.getElementById("chapIdx");
+  var courant = 0;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) {
+        en.target.classList.add("in");
+        var i = scenes.indexOf(en.target);
+        if (i !== -1 && i !== courant) {
+          courant = i;
+          chapMot.classList.add("chg");
+          setTimeout(function () {
+            chapMot.textContent = scenes[courant].dataset.chapitre || "";
+            chapIdx.textContent = String(courant + 1).padStart(2, "0");
+            chapMot.classList.remove("chg");
+          }, 200);
+        }
+      }
+    });
+  }, { threshold: 0.45 });
+  scenes.forEach(function (s) { io.observe(s); });
+
+  /* ---- Préc. / Suiv. ---- */
+  function va(delta) {
+    var cible = clamp(courant + delta, 0, scenes.length - 1);
+    scenes[cible].scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
+  }
+  document.getElementById("prevSc").addEventListener("click", function () { va(-1); });
+  document.getElementById("nextSc").addEventListener("click", function () { va(1); });
+  addEventListener("keydown", function (e) {
+    if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); va(1); }
+    if (e.key === "ArrowUp" || e.key === "PageUp") { e.preventDefault(); va(-1); }
+  });
+
+  /* ---- Comparateur plein cadre ---- */
+  var cadreur = document.getElementById("cadreur");
+  if (cadreur) {
+    var glisse = false;
+    var pose = function (clientX) {
+      var r = cadreur.getBoundingClientRect();
+      var x = clamp(((clientX - r.left) / r.width) * 100, 2, 98);
+      cadreur.style.setProperty("--cx", x + "%");
+      cadreur.setAttribute("aria-valuenow", Math.round(x));
+    };
+    cadreur.addEventListener("pointerdown", function (e) { glisse = true; pose(e.clientX); });
+    addEventListener("pointermove", function (e) { if (glisse) pose(e.clientX); }, { passive: true });
+    addEventListener("pointerup", function () { glisse = false; });
+    cadreur.addEventListener("keydown", function (e) {
+      var v = parseFloat(getComputedStyle(cadreur).getPropertyValue("--cx")) || 50;
+      if (e.key === "ArrowLeft") { cadreur.style.setProperty("--cx", clamp(v - 4, 2, 98) + "%"); }
+      if (e.key === "ArrowRight") { cadreur.style.setProperty("--cx", clamp(v + 4, 2, 98) + "%"); }
+    });
+  }
+
+  /* ---- Vidéos : ne jouent que sous les yeux ---- */
+  ["cmpVideo", "grandFilm"].forEach(function (id) {
+    var v = document.getElementById(id);
+    if (v && "IntersectionObserver" in window) {
+      new IntersectionObserver(function (es) {
+        es.forEach(function (en) {
+          if (en.isIntersecting) { v.play().catch(function () {}); } else { v.pause(); }
+        });
+      }, { threshold: 0.3 }).observe(v);
+    }
+  });
+
+  /* ---- Curseur ---- */
+  var cur = document.getElementById("curseur");
+  if (cur && !matchMedia("(pointer: coarse)").matches) {
+    var pt = cur.querySelector(".pt"), an = cur.querySelector(".an"), lbl = document.getElementById("curLbl");
+    var mx = -100, my = -100, ax = -100, ay = -100;
+    addEventListener("pointermove", function (e) {
+      mx = e.clientX; my = e.clientY;
+      var c = e.target.closest ? e.target.closest("[data-cursor]") : null;
+      if (c && c.dataset.cursor) { lbl.textContent = c.dataset.cursor; cur.classList.add("actif"); }
+      else { cur.classList.remove("actif"); }
+    }, { passive: true });
+    (function suit() {
+      ax += (mx - ax) * 0.16; ay += (my - ay) * 0.16;
+      pt.style.transform = "translate(" + mx + "px," + my + "px) translate(-50%,-50%)";
+      an.style.transform = "translate(" + ax.toFixed(1) + "px," + ay.toFixed(1) + "px) translate(-50%,-50%)";
+      requestAnimationFrame(suit);
+    })();
+  }
+})();
+</script>
+</body>
+</html>
