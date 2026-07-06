@@ -540,20 +540,6 @@ body::before{
 .price-anchor b{color:var(--ember);font-weight:400}
 @media (prefers-reduced-motion: reduce){ body::after{animation:none} }
 
-/* ===== LA PREUVE : le film avant la promesse ===== */
-.proof-frame{position:relative;border-radius:10px;overflow:hidden;
-  border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.55), 0 0 60px rgba(255,107,53,.06);
-  max-width:960px;margin:2.6rem auto 0}
-.proof-frame video{display:block;width:100%;height:auto;background:#000}
-.proof-chip{position:absolute;top:1rem;left:1.1rem;font-family:var(--mono);font-size:.62rem;
-  letter-spacing:.2em;color:var(--bone);background:rgba(10,8,6,.55);backdrop-filter:blur(6px);
-  padding:.4rem .7rem;border-radius:4px;border:1px solid rgba(255,107,53,.3)}
-.proof-chip i{color:#ff3b30;font-style:normal;animation:recblink 1.6s steps(2) infinite}
-@keyframes recblink{50%{opacity:.25}}
-.proof-tc{position:absolute;bottom:1rem;right:1.1rem;font-size:.66rem;letter-spacing:.14em;
-  color:var(--bone);opacity:.75;background:rgba(10,8,6,.45);padding:.3rem .55rem;border-radius:4px}
-.proof-caption{max-width:62ch;margin:1.6rem auto 0;text-align:center;color:var(--dim);line-height:1.7}
-.proof-caption b{color:var(--bone);font-weight:500}
 /* ===== CTA collant mobile ===== */
 .sticky-cta{position:fixed;left:.8rem;right:.8rem;bottom:.8rem;z-index:95;
   display:none;align-items:center;justify-content:space-between;gap:1rem;
@@ -701,7 +687,6 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
     </a>
     <span class="mono" id="timecode">TC 00:00:00:00 · 24 FPS</span>
     <nav class="main-nav" aria-label="Navigation principale">
-      <a href="#preuve">La preuve</a>
       <a href="#methode">Méthode</a>
       <a href="demo.html">Démo</a>
       <a href="#tarifs">Tarifs</a>
@@ -779,25 +764,6 @@ body.show-sticky .sticky-cta{transform:translateY(0)}
   </section>
 
   <!-- 2 · PILIER I -->
-  <section class="preuve stage jstage" id="preuve">
-    <div class="container">
-      <span class="slate">La preuve · Avant la promesse</span>
-      <h2>Quatre photos.<br>Zéro caméra sur place.</h2>
-      <div class="proof-frame" data-cursor="Regarder">
-        <video id="proofVideo" poster="preuve_poster.jpg" muted loop playsinline preload="metadata"
-               aria-label="Film immobilier généré par Vesta à partir de photos">
-          <source src="preuve.mp4" type="video/mp4">
-        </video>
-        <div class="film-bars" aria-hidden="true"></div>
-        <span class="proof-chip"><i>●</i>&nbsp;BIEN DE DÉMONSTRATION · PIPELINE RÉEL</span>
-        <span class="proof-tc mono" id="proofTc">00:00:00:00</span>
-      </div>
-      <p class="proof-caption">Un T3 haussmannien de démonstration, généré de bout en bout par notre pipeline : <b>chaque plan
-      démarre de la photo, pixel pour pixel</b> — la caméra traverse le bien comme au cinéma.
-      Livré en 16:9 pour les portails, en vertical pour vos réseaux.</p>
-    </div>
-  </section>
-
   <section class="method stage jstage" id="methode">
     <div class="container">
       <div class="panel reveal">
@@ -1941,25 +1907,6 @@ frame();
     if (!ticking) { requestAnimationFrame(onScroll); ticking = true; }
   }, { passive: true });
 
-  var vid = document.getElementById("proofVideo");
-  var tc = document.getElementById("proofTc");
-  if (vid && "IntersectionObserver" in window) {
-    new IntersectionObserver(function (es) {
-      es.forEach(function (e) {
-        if (e.isIntersecting) { vid.play().catch(function () {}); }
-        else { vid.pause(); }
-      });
-    }, { threshold: 0.35 }).observe(vid);
-  }
-  if (vid && tc) {
-    setInterval(function () {
-      if (vid.paused) return;
-      var t = vid.currentTime, f = Math.floor((t % 1) * 24);
-      var s = Math.floor(t) % 60, m = Math.floor(t / 60);
-      tc.textContent = "00:" + String(m).padStart(2, "0") + ":" +
-        String(s).padStart(2, "0") + ":" + String(f).padStart(2, "0");
-    }, 42);
-  }
 })();
 /* L'embrasement des boutons : une étincelle au point exact du clic */
 document.addEventListener("click", function (e) {
