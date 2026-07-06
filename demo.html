@@ -175,7 +175,7 @@ body::before{
 /* ===== La matière brute : photos éparses qui convergent au scroll ===== */
 .photo-field{position:fixed;inset:0;z-index:10;pointer-events:none}
 .pcard{
-  position:absolute;left:50%;top:46%;width:clamp(150px,19vw,264px);
+  position:absolute;left:50%;top:46%;width:clamp(200px,26vw,360px);opacity:0;
   transform:translate(-50%,-50%);will-change:transform,opacity;
   border:1px solid rgba(239,231,216,.22);border-radius:6px;overflow:hidden;
   box-shadow:0 22px 60px rgba(0,0,0,.55);background:#141009;
@@ -801,28 +801,48 @@ function igniteBurst() {
 const forgeFill = document.getElementById("forgeFill");
 const forgePct = document.getElementById("forgePct");
 const forgeLabel = document.getElementById("forgeLabel");
-/* Les photos éparses convergent vers l'œuvre à mesure que q monte */
+/* LE DÉFILÉ DES RUSHES — chaque photo passe une par une :
+   elle entre par la droite, tient la scène, puis est aspirée par l'œuvre. */
 const cartes = Array.from(document.querySelectorAll(".pcard"));
-const CFG_CARTES = [
-  { x0: -0.37, y0: -0.27, r0: -9, s0: 1.00, d: 0.00 },
-  { x0:  0.36, y0: -0.30, r0:  7, s0: 0.92, d: 0.05 },
-  { x0: -0.35, y0:  0.25, r0:  6, s0: 0.96, d: 0.10 },
-  { x0:  0.38, y0:  0.27, r0: -7, s0: 0.90, d: 0.15 },
-];
+const RUSH = { debut: 0.05, fenetre: 0.19 };   // photo i occupe [debut+i*fenetre, +fenetre]
+const TILT = [-3.5, 2.8, -2.4, 3.2];           // inclinaison de scène propre à chaque rush
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+const smooth = (t) => t * t * (3 - 2 * t);
 if (reduceMotion) cartes.forEach((el) => { el.style.display = "none"; });
-function majPhotos(q) {
+
+function majPhotos(q, temps) {
   if (reduceMotion || !cartes.length) return;
   const W = window.innerWidth, H = window.innerHeight;
+  const sceneX = (W < 720 ? 0.20 : 0.26) * W;   // la scène : à droite de la statue
   for (let i = 0; i < cartes.length; i++) {
-    const c = CFG_CARTES[i];
-    const t = clamp((q - c.d) / (0.86 - c.d), 0, 1);
-    const e = t * t * (3 - 2 * t);
-    const x = lerp(c.x0 * W, 0, e);
-    const y = lerp(c.y0 * H, -0.05 * H, e);
-    const s = lerp(c.s0, 0.2, e);
-    const r = lerp(c.r0, 0, e);
-    const o = clamp(1 - (q - 0.68) / 0.18, 0, 1);
     const el = cartes[i];
+    const t = (q - (RUSH.debut + i * RUSH.fenetre)) / RUSH.fenetre;
+    if (t <= 0 || t >= 1.08) { el.style.opacity = "0"; continue; }
+
+    let x, y, s, r, o;
+    if (t < 0.3) {                    // ACTE 1 — l'entrée : glisse depuis le bas droit
+      const e = easeOut(t / 0.3);
+      x = lerp(sceneX + 0.22 * W, sceneX, e);
+      y = lerp(0.42 * H, 0.02 * H, e);
+      s = lerp(0.86, 1, e);
+      r = lerp(TILT[i] * 2.6, TILT[i], e);
+      o = clamp(e * 1.6, 0, 1);
+    } else if (t < 0.64) {            // ACTE 2 — la scène : flottement organique
+      const h = (t - 0.3) / 0.34;
+      const vie = Math.sin(temps * 0.9 + i * 2.1);
+      x = sceneX + vie * 5;
+      y = 0.02 * H + Math.cos(temps * 0.7 + i) * 6;
+      s = lerp(1, 1.045, h);          // très lent grossissement : le regard s'installe
+      r = TILT[i] + vie * 0.5;
+      o = 1;
+    } else {                          // ACTE 3 — l'absorption : aspirée par l'œuvre
+      const a = smooth(clamp((t - 0.64) / 0.36, 0, 1));
+      x = lerp(sceneX, 0, a);
+      y = lerp(0.02 * H, -0.06 * H, a);
+      s = lerp(1.045, 0.14, a);
+      r = lerp(TILT[i], 0, a);
+      o = clamp(1 - (a - 0.55) / 0.45, 0, 1);
+    }
     el.style.transform = "translate(-50%,-50%) translate3d(" + x.toFixed(1) + "px," +
       y.toFixed(1) + "px,0) rotate(" + r.toFixed(2) + "deg) scale(" + s.toFixed(3) + ")";
     el.style.opacity = o.toFixed(3);
@@ -848,7 +868,7 @@ function frame() {
 
   smoothP = lerp(smoothP, prog.p, 1 - Math.pow(0.002, dt));
   const q = Math.max(smoothP, intro.v);   // l'intro-éclatement prime sur le scroll
-  majPhotos(q);
+  majPhotos(q, elapsed);
   setAssembly(q);
 
   /* caméra : orbite lente 3/4 -> face, dolly-in final, micro-parallaxe */
