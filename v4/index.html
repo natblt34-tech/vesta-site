@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vesta — La faille</title>
+<meta name="description" content="Vesta transforme les photos de vos mandats en films cinématiques. Livré en 48 h. Première vidéo offerte.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0A0806">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2C13 9 8 11 8 18a8 8 0 0 0 16 0c0-4-2-6-3-9-1 3-2 4-3 5 0-4-1-8-2-12z' fill='%23FF6B35'/%3E%3C/svg%3E">
+<link rel="preload" href="terrain.jpg" as="image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300;1,400&family=Archivo:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0A0806; --bone:#EFE7D8; --ember:#FF6B35; --ember-hot:#FF8A50;
+  --dim:#8A8178; --line:rgba(239,231,216,.12);
+  --serif:"Fraunces",serif; --sans:"Archivo",sans-serif; --mono:"JetBrains Mono",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--void);color:var(--bone);font-family:var(--sans);overflow-x:hidden}
+em{font-style:italic;color:var(--ember-hot)}
+.mono{font-family:var(--mono)}
+::selection{background:var(--ember);color:var(--void)}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:#0c0a08}
+::-webkit-scrollbar-thumb{background:#2a211a;border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:var(--ember)}
+:focus-visible{outline:1.5px solid var(--ember);outline-offset:3px}
+
+/* grain + vignette */
+body::after{content:"";position:fixed;inset:-60px;z-index:88;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  opacity:.05;mix-blend-mode:soft-light;animation:grain 1.1s steps(4) infinite}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-24px,14px)}
+  50%{transform:translate(16px,-20px)}75%{transform:translate(-12px,-8px)}100%{transform:translate(0,0)}}
+body::before{content:"";position:fixed;inset:0;z-index:87;pointer-events:none;
+  background:radial-gradient(130% 96% at 50% 44%, transparent 55%, rgba(4,3,3,.72) 100%)}
+
+/* ============ PRÉLOADER LÉGER ============ */
+#voile{position:fixed;inset:0;z-index:600;background:var(--void);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .9s ease;font-family:var(--mono);font-size:.62rem;
+  letter-spacing:.4em;color:var(--dim)}
+#voile.parti{opacity:0;pointer-events:none}
+
+/* ============ LES COUCHES DU MONDE ============ */
+#terre{position:fixed;inset:0;z-index:0;overflow:hidden}
+#terre img{position:absolute;left:50%;top:0;transform:translateX(-50%);
+  width:max(100vw,68vh);height:auto;will-change:transform;user-select:none;pointer-events:none}
+#faille{position:fixed;inset:0;z-index:1;width:100vw;height:100vh;pointer-events:none}
+#piste{height:780vh;position:relative;z-index:2}
+
+/* ============ CHROME ============ */
+header{position:fixed;inset:0 0 auto;z-index:100;display:flex;justify-content:space-between;
+  align-items:center;padding:1.3rem clamp(1.4rem,4vw,3rem);
+  background:linear-gradient(rgba(10,8,6,.72), transparent)}
+.marque{display:flex;align-items:center;gap:.7rem;text-decoration:none;color:var(--bone)}
+.marque svg{width:22px;height:22px}
+.marque b{font-family:var(--serif);font-weight:400;letter-spacing:.34em;font-size:.9rem}
+header nav{display:flex;gap:1.6rem;align-items:center}
+header nav a{font-family:var(--mono);font-size:.62rem;letter-spacing:.22em;color:var(--bone);
+  text-decoration:none;text-transform:uppercase;opacity:.75;transition:opacity .3s}
+header nav a:hover{opacity:1}
+header nav a.cta{border:1px solid rgba(255,107,53,.55);border-radius:999px;padding:.55rem 1.1rem;opacity:1}
+#chapitre{position:fixed;left:clamp(1.4rem,4vw,3rem);bottom:2rem;z-index:90;
+  display:flex;flex-direction:column;gap:.4rem;pointer-events:none}
+#chapitre .mot{font-family:var(--mono);font-size:.62rem;letter-spacing:.34em;color:var(--ember);
+  text-transform:uppercase;transition:opacity .3s,transform .3s}
+#chapitre .mot.chg{opacity:0;transform:translateY(6px)}
+#chapitre .idx{font-family:var(--mono);font-size:.58rem;letter-spacing:.22em;color:var(--dim)}
+#rail{position:fixed;right:1.2rem;top:50%;transform:translateY(-50%);z-index:90;
+  width:2px;height:32vh;background:rgba(239,231,216,.1)}
+#rail i{position:absolute;inset:0;background:linear-gradient(#FF8A50,var(--ember));
+  transform:scaleY(0);transform-origin:top;display:block}
+#cue{position:fixed;left:50%;top:50%;z-index:60;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:.8rem;pointer-events:none;
+  transition:opacity .5s ease}
+#cue .lbl{font-family:var(--mono);font-size:.72rem;letter-spacing:.38em;color:var(--bone);
+  text-shadow:0 2px 18px rgba(0,0,0,.9), 0 0 40px rgba(255,107,53,.25)}
+#cue i{width:13px;height:13px;border-right:1.5px solid var(--ember);border-bottom:1.5px solid var(--ember);
+  transform:rotate(45deg);animation:cuefall 1.7s cubic-bezier(.45,0,.25,1) infinite}
+#cue i:nth-child(3){animation-delay:.18s;opacity:.55}
+@keyframes cuefall{0%{transform:rotate(45deg) translate(-6px,-6px);opacity:0}
+  35%{opacity:1}100%{transform:rotate(45deg) translate(5px,5px);opacity:0}}
+@media (max-width:720px){#rail{display:none}body::after{display:none}}
+
+/* ============ LES CHAPITRES : blocs fixes le long de la faille ============ */
+.chap{position:fixed;top:50%;z-index:20;transform:translateY(-50%);
+  max-width:min(86vw,480px);opacity:0;pointer-events:none;will-change:opacity,transform}
+.chap.g{left:clamp(1.4rem,6vw,7rem)}
+.chap.d{right:clamp(1.4rem,6vw,7rem);text-align:right}
+.chap .slate{font-family:var(--mono);font-size:.64rem;letter-spacing:.3em;color:var(--ember);
+  text-transform:uppercase;display:flex;align-items:center;gap:.9rem;margin-bottom:1.4rem}
+.chap .slate::before{content:"";width:30px;height:1px;background:var(--ember)}
+.chap.d .slate{justify-content:flex-end}
+.chap.d .slate::before{order:2}
+.chap h2{font-family:var(--serif);font-weight:300;line-height:1.08;
+  font-size:clamp(1.9rem,4.6vw,3.9rem);letter-spacing:-.01em;
+  text-shadow:0 2px 30px rgba(0,0,0,.85)}
+.chap p{color:var(--dim);line-height:1.7;margin-top:1.2rem;font-size:clamp(.92rem,1.1vw,1.05rem);
+  text-shadow:0 1px 14px rgba(0,0,0,.9)}
+.chap .mn{display:inline-block;margin-top:1rem;font-family:var(--mono);font-size:.62rem;
+  letter-spacing:.26em;color:var(--ember)}
+.chap .lienx{display:inline-flex;align-items:center;gap:.8rem;margin-top:1.6rem;
+  pointer-events:auto;text-decoration:none;font-family:var(--mono);font-size:.66rem;
+  letter-spacing:.24em;text-transform:uppercase;color:var(--bone);position:relative}
+.chap .lienx::after{content:"";position:absolute;left:0;bottom:-6px;height:1px;width:100%;
+  background:var(--ember);transform:scaleX(.35);transform-origin:left;transition:transform .4s}
+.chap .lienx:hover::after{transform:scaleX(1)}
+.chap .lienx i{font-style:normal;color:var(--ember)}
+
+/* ============ APRÈS LA FAILLE : preuve, offres, foyer ============ */
+#apres{position:relative;z-index:3;background:linear-gradient(transparent, rgba(8,6,4,.94) 14%, #0A0806 30%);
+  padding:clamp(5rem,12vh,8rem) clamp(1.4rem,6vw,6rem) 0}
+#apres .bloc{max-width:1100px;margin:0 auto clamp(4rem,10vh,7rem)}
+#apres h2{font-family:var(--serif);font-weight:300;font-size:clamp(1.9rem,4.4vw,3.6rem);line-height:1.12}
+#apres .slate{font-family:var(--mono);font-size:.66rem;letter-spacing:.32em;color:var(--ember);
+  text-transform:uppercase;display:flex;align-items:center;gap:1rem;margin-bottom:1.6rem}
+#apres .slate::before{content:"";width:34px;height:1px;background:var(--ember)}
+.cadreur{position:relative;margin-top:2rem;height:min(64vh,640px);overflow:hidden;
+  border:1px solid var(--line);border-radius:8px;box-shadow:0 40px 110px rgba(0,0,0,.55)}
+.cadreur img,.cadreur video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cadreur .apres-c{position:absolute;inset:0;clip-path:inset(0 0 0 var(--cx,50%))}
+.cadreur .manche{position:absolute;top:0;bottom:0;left:var(--cx,50%);width:1px;
+  background:rgba(239,231,216,.75);z-index:5}
+.cadreur .manche::after{content:"⟷";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:50px;height:50px;border-radius:50%;background:var(--void);
+  border:1px solid rgba(255,107,53,.6);color:var(--ember);
+  display:flex;align-items:center;justify-content:center;font-size:1rem}
+.cadreur .tag{position:absolute;bottom:1.1rem;font-family:var(--mono);font-size:.6rem;
+  letter-spacing:.24em;color:var(--bone);background:rgba(10,8,6,.55);backdrop-filter:blur(6px);
+  padding:.45rem .8rem;border-radius:4px;z-index:4}
+.cadreur .tag.g{left:1.2rem}
+.cadreur .tag.d{right:1.2rem;border:1px solid rgba(255,107,53,.35)}
+.offre{display:grid;grid-template-columns:1fr auto;gap:.6rem 2.5rem;align-items:center;
+  padding:1.8rem 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit;
+  position:relative;transition:padding .4s cubic-bezier(.2,.8,.2,1)}
+.offre:first-of-type{border-top:1px solid var(--line)}
+.offre::before{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:var(--ember);transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.offre:hover::before{transform:scaleX(1)}
+.offre:hover{padding-left:1.1rem}
+.offre .nom{font-family:var(--serif);font-weight:300;font-size:clamp(1.5rem,3.4vw,2.7rem);line-height:1.1}
+.offre .nom small{display:block;font-family:var(--sans);font-size:.86rem;color:var(--dim);margin-top:.4rem;max-width:52ch;line-height:1.55}
+.offre .prix{font-family:var(--serif);font-weight:300;font-size:clamp(1.8rem,4.2vw,3.4rem);
+  font-variant-numeric:tabular-nums;text-align:right;line-height:1}
+.offre .prix small{display:block;font-family:var(--mono);font-size:.55rem;letter-spacing:.2em;color:var(--dim);margin-top:.4rem}
+.offre .badge{position:absolute;top:.9rem;left:0;font-family:var(--mono);font-size:.53rem;
+  letter-spacing:.24em;color:var(--ember)}
+.ancrage{margin-top:1.6rem;font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;color:var(--dim)}
+.ancrage b{color:var(--ember);font-weight:400}
+.btn{display:inline-block;margin-top:2rem;padding:1rem 2.4rem;border-radius:999px;
+  border:1px solid var(--ember);color:var(--bone);text-decoration:none;
+  font-family:var(--mono);font-size:.7rem;letter-spacing:.24em;text-transform:uppercase;
+  transition:box-shadow .35s,transform .35s}
+.btn:hover{box-shadow:0 8px 40px rgba(255,107,53,.3);transform:translateY(-2px)}
+.questions{max-width:640px;margin-top:2rem}
+.questions details{border-top:1px solid var(--line);padding:1.1rem 0}
+.questions summary{list-style:none;font-size:.95rem;display:flex;justify-content:space-between;gap:1rem;cursor:pointer}
+.questions summary::-webkit-details-marker{display:none}
+.questions summary::after{content:"+";color:var(--ember);font-family:var(--mono)}
+.questions details[open] summary::after{content:"−"}
+.questions details p{color:var(--dim);line-height:1.7;padding:.9rem 0 .4rem;font-size:.92rem;max-width:56ch}
+footer{display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between;
+  border-top:1px solid var(--line);margin-top:2rem;
+  padding:1.4rem 0 1.6rem;font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--dim)}
+footer a{color:var(--dim);text-decoration:none}
+footer a:hover{color:var(--ember)}
+
+@media (prefers-reduced-motion: reduce){
+  body::after{animation:none}
+  #cue{display:none}
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:2rem;font-family:sans-serif">Vesta est une expérience interactive — activez JavaScript. La première vidéo est offerte.</p></noscript>
+
+<div id="voile">LE FOYER S'ÉVEILLE</div>
+
+<!-- le monde : terrain photoréaliste + faille temps réel -->
+<div id="terre" aria-hidden="true"><img id="carte" src="terrain.jpg" alt=""></div>
+<canvas id="faille" aria-hidden="true"></canvas>
+
+<header>
+  <a class="marque" href="#haut">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2C13 9 8 11 8 18a8 8 0 0 0 16 0c0-4-2-6-3-9-1 3-2 4-3 5 0-4-1-8-2-12z" fill="#FF6B35"/></svg>
+    <b>VESTA</b>
+  </a>
+  <nav>
+    <a href="#apres">Prix</a>
+    <a class="cta" href="#foyer">Ma 1<sup>re</sup> vidéo — offerte</a>
+  </nav>
+</header>
+<div id="chapitre" aria-hidden="true">
+  <span class="mot" id="chapMot">L'étincelle</span>
+  <span class="idx"><b id="chapIdx">01</b> / 07</span>
+</div>
+<div id="rail" aria-hidden="true"><i id="railFill"></i></div>
+<div id="cue" aria-hidden="true">
+  <span class="lbl">SCROLLEZ — OUVREZ LA FAILLE</span>
+  <i></i><i></i>
+</div>
+
+<!-- ============ LES 7 CHAPITRES, au fil de la faille ============ -->
+<div class="chap g" id="ch1">
+  <span class="slate">Vidéos immobilières par IA</span>
+  <h2>Vos annonces ont des photos.<br><em>Vos concurrents ont des films.</em></h2>
+  <p>Vesta transforme les photos de vos mandats en films cinématiques.
+  Livré en 48 h. Sans drone, sans vidéaste.</p>
+</div>
+<div class="chap d" id="ch2">
+  <span class="slate">La méthode · I</span>
+  <h2>Vous envoyez<br>les photos.</h2>
+  <p>Une par pièce, depuis l'entrée, portes ouvertes sur le parcours.
+  Notre fiche de prise de vue tient en trois règles.</p>
+  <span class="mn">5 MINUTES</span>
+</div>
+<div class="chap g" id="ch3">
+  <span class="slate">La méthode · II</span>
+  <h2>Le foyer<br>forge le film.</h2>
+  <p>La caméra traverse le bien comme au cinéma — les meubles de la photo,
+  rien que les meubles de la photo. Relecture humaine sur chaque film.</p>
+  <span class="mn">48 HEURES</span>
+</div>
+<div class="chap d" id="ch4">
+  <span class="slate">La méthode · III</span>
+  <h2>Vous diffusez<br>partout.</h2>
+  <p>16:9 pour les portails, vertical pour vos réseaux.
+  Un lien, toutes les déclinaisons.</p>
+  <span class="mn">1 LIEN</span>
+</div>
+<div class="chap g" id="ch5">
+  <span class="slate">La promesse</span>
+  <h2>Chaque plan démarre de votre photo.<br><em>Pixel pour pixel.</em></h2>
+  <p>Le modèle n'anime que le mouvement de caméra —
+  il n'invente ni meubles, ni pièces, ni lumière.</p>
+</div>
+<div class="chap d" id="ch6">
+  <span class="slate">Le prix du feu</span>
+  <h2>Le prix<br>d'un <em>déjeuner.</em></h2>
+  <p>Première vidéo offerte, puis 29 € par mois pour 5 films.
+  Un vidéaste facture 300 à 800 € par bien.</p>
+  <a class="lienx" href="#apres">Voir les offres <i>→</i></a>
+</div>
+<div class="chap g" id="ch7">
+  <span class="slate">Le foyer vous attend</span>
+  <h2>La première flamme<br>est <em>offerte.</em></h2>
+  <p>Envoyez les photos d'un bien de votre vitrine.
+  Film sous 48 h, relu par un œil humain. Jugez sur pièce.</p>
+  <a class="lienx" href="#foyer">Allumer mon foyer <i>→</i></a>
+</div>
+
+<!-- la piste : la timeline invisible -->
+<div id="piste" aria-hidden="true"></div>
+
+<!-- ============ APRÈS LA FAILLE ============ -->
+<section id="apres">
+  <div class="bloc">
+    <span class="slate">La preuve · Glissez</span>
+    <h2>La même pièce. Avant. <em>Après.</em></h2>
+    <div class="cadreur" id="cadreur" role="slider" tabindex="0"
+         aria-label="Comparateur photo d'origine et film généré" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+      <img src="../compare_avant.jpg" alt="Photo d'origine du bien" loading="lazy" decoding="async">
+      <div class="apres-c">
+        <video id="cmpVideo" poster="../compare_apres.jpg" muted loop playsinline preload="metadata"
+               aria-label="Film généré par Vesta"><source src="../preuve.mp4" type="video/mp4"></video>
+      </div>
+      <span class="manche" aria-hidden="true"></span>
+      <span class="tag g">PHOTO D'ORIGINE</span>
+      <span class="tag d">FILM VESTA · 24 FPS</span>
+    </div>
+  </div>
+
+  <div class="bloc">
+    <span class="slate">Le prix du feu</span>
+    <a class="offre" href="#foyer">
+      <div class="nom">Étincelle<small>La première vidéo, offerte. Jugez sur pièce.</small></div>
+      <div class="prix">0&nbsp;€<small>POUR TOUJOURS</small></div>
+    </a>
+    <a class="offre" href="#foyer">
+      <span class="badge">LE CHOIX DES AGENTS</span>
+      <div class="nom">Flamme<small>5 vidéos par mois, sans filigrane, portails et réseaux.</small></div>
+      <div class="prix">29&nbsp;€<small>PAR MOIS</small></div>
+    </a>
+    <a class="offre" href="#foyer">
+      <div class="nom">Brasier<small>Illimité, priorité de rendu, déclinaisons sur mesure.</small></div>
+      <div class="prix">149&nbsp;€<small>PAR MOIS</small></div>
+    </a>
+    <p class="ancrage">UN VIDÉASTE : <b>300 À 800 €</b> PAR BIEN, SOUS 2 SEMAINES. VESTA : <b>48 H</b>.</p>
+  </div>
+
+  <div class="bloc" id="foyer">
+    <span class="slate">Le foyer vous attend</span>
+    <h2>La première flamme est <em>offerte.</em></h2>
+    <a class="btn" href="mailto:contact@vesta.example?subject=Ma%20premi%C3%A8re%20vid%C3%A9o%20offerte">Allumer mon foyer</a>
+    <div class="questions">
+      <details>
+        <summary>L'IA invente-t-elle des meubles ou des pièces ?</summary>
+        <p>Non — c'est le cœur de notre méthode. Chaque plan démarre de votre photo, pixel pour pixel :
+        le modèle n'anime que le mouvement de caméra. Et chaque film passe une relecture humaine avant livraison.</p>
+      </details>
+      <details>
+        <summary>Comment prendre les photos ?</summary>
+        <p>Trois règles : chaque pièce depuis son entrée, dans le sens de la visite ; portes ouvertes
+        sur les pièces à montrer ; hors du champ des miroirs. La fiche complète est remise à l'inscription.</p>
+      </details>
+      <details>
+        <summary>Et si le résultat ne me plaît pas ?</summary>
+        <p>La première vidéo est offerte, sans carte bancaire : le seul risque est d'avoir un film en plus.
+        Sur abonnement, chaque vidéo peut être régénérée avec vos retours.</p>
+      </details>
+    </div>
+    <footer>
+      <span>VESTA © 2026 — CONÇU ET FORGÉ À TOULOUSE</span>
+      <a href="../demo.html">LA FORGE</a>
+      <a href="../">VERSION CLASSIQUE</a>
+    </footer>
+  </div>
+</section>
+<script>
+/* =====================================================================
+   LA FAILLE — moteur temps réel
+   Le scroll est la timeline : la pointe de la fracture avance exactement
+   à la vitesse du doigt ; le terrain (photo) panne pour garder la pointe
+   au centre ; la lave vit ; les braises réagissent à la vélocité.
+   ===================================================================== */
+(function () {
+  "use strict";
+  var reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var lerp = function (a, b, t) { return a + (b - a) * t; };
+  var clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+  var smooth = function (t) { return t * t * (3 - 2 * t); };
+
+  /* ---------- bruit 1D déterministe (le tracé est figé, comme un film) ---------- */
+  function hash(n) {
+    var x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+  function bruit(x) {
+    var i = Math.floor(x), f = x - i;
+    var u = f * f * (3 - 2 * f);
+    return lerp(hash(i), hash(i + 1), u) * 2 - 1;
+  }
+  function fractal(x) {
+    return bruit(x) * 0.6 + bruit(x * 2.7 + 13.7) * 0.28 + bruit(x * 6.1 + 47.2) * 0.12;
+  }
+
+  /* ---------- le monde ---------- */
+  var carte = document.getElementById("carte");
+  var terre = document.getElementById("terre");
+  var cv = document.getElementById("faille");
+  var ctx = cv.getContext("2d");
+  var piste = document.getElementById("piste");
+  var DPR = Math.min(devicePixelRatio || 1, 1.5);
+  var VW = 0, VH = 0, terH = 0, terW = 0, terX = 0;
+
+  function taille() {
+    VW = innerWidth; VH = innerHeight;
+    cv.width = VW * DPR; cv.height = VH * DPR;
+    cv.style.width = VW + "px"; cv.style.height = VH + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    terW = Math.max(VW, VH * 0.68);
+    terH = terW * (7200 / 1280);
+    terX = (VW - terW) / 2;
+    carte.style.width = terW + "px";
+  }
+  taille();
+  addEventListener("resize", taille);
+
+  /* ---------- LE TRACÉ DE LA FAILLE (espace terrain, u/v dans [0,1]) ---------- */
+  var N = 1400;
+  var chemin = [];          // {u, v, j}  j = irrégularité locale
+  for (var i = 0; i <= N; i++) {
+    var v = i / N;
+    var u = 0.5
+      + Math.sin(v * 9.0) * 0.11
+      + Math.sin(v * 21.0 + 1.7) * 0.05
+      + fractal(v * 40.0) * 0.035;
+    chemin.push({ u: u, v: v, j: fractal(v * 160.0) });
+  }
+  /* branches : ancrées le long du chemin, chacune son petit tracé */
+  var branches = [];
+  for (var b = 0; b < 30; b++) {
+    var av = 0.06 + 0.9 * hash(b * 7.3);
+    var idx = Math.round(av * N);
+    var dir = hash(b * 3.1) > 0.5 ? 1 : -1;
+    var lon = 0.02 + hash(b * 11.7) * 0.045;         // longueur en v
+    var pts = [];
+    var steps = 26;
+    for (var s = 0; s <= steps; s++) {
+      var t = s / steps;
+      pts.push({
+        u: chemin[idx].u + dir * t * (0.05 + hash(b * 5.9) * 0.1) + fractal(b * 31 + t * 26) * 0.02 * t,
+        v: av + t * lon * 0.55 + fractal(b * 17 + t * 19) * 0.008,
+      });
+    }
+    branches.push({ av: av, pts: pts, w: 0.35 + hash(b * 13.3) * 0.35 });
+  }
+
+  /* ---------- sprites pré-rendus (zéro shadowBlur en boucle) ---------- */
+  function sprite(taillePx, stops) {
+    var c = document.createElement("canvas");
+    c.width = c.height = taillePx;
+    var g = c.getContext("2d");
+    var grad = g.createRadialGradient(taillePx / 2, taillePx / 2, 0, taillePx / 2, taillePx / 2, taillePx / 2);
+    stops.forEach(function (s) { grad.addColorStop(s[0], s[1]); });
+    g.fillStyle = grad;
+    g.fillRect(0, 0, taillePx, taillePx);
+    return c;
+  }
+  var spGlow = sprite(128, [[0, "rgba(255,190,120,.9)"], [0.3, "rgba(255,120,50,.5)"], [1, "rgba(255,80,20,0)"]]);
+  var spEmber = sprite(48, [[0, "rgba(255,225,175,1)"], [0.35, "rgba(255,140,70,.85)"], [1, "rgba(255,90,30,0)"]]);
+
+  /* ---------- braises (réactives à la vélocité) ---------- */
+  var EMB_MAX = 170;
+  var embers = [];
+  function emitEmber(x, y, force) {
+    if (embers.length >= EMB_MAX) embers.shift();
+    embers.push({
+      x: x + (Math.random() - 0.5) * 14,
+      y: y + (Math.random() - 0.5) * 8,
+      vx: (Math.random() - 0.5) * (18 + force * 50),
+      vy: -(22 + Math.random() * 44) * (1 + force * 1.6),
+      r: 2 + Math.random() * 3.5,
+      vie: 1,
+      dur: 1.4 + Math.random() * 1.8,
+      ph: Math.random() * 6.28,
+    });
+  }
+
+  /* ---------- progression + vélocité ---------- */
+  var p = 0, pS = 0, vel = 0, lastP = 0;
+  function calcP() {
+    var r = piste.getBoundingClientRect();
+    var total = r.height - VH;
+    p = total > 0 ? clamp(-r.top / total, 0, 1) : 0;
+  }
+  addEventListener("scroll", calcP, { passive: true });
+  calcP();
+
+  /* ---------- conversion terrain -> écran ---------- */
+  var offsetY = 0;
+  function versEcran(u, v) {
+    return { x: terX + u * terW, y: v * terH - offsetY };
+  }
+
+  /* ---------- rendu de la faille ---------- */
+  var TIP_SCREEN = 0.46;     // la pointe vit à 46 % de l'écran
+  var DEB = 0.035, FIN = 0.965;
+
+  function dessine(t, dt) {
+    ctx.clearRect(0, 0, VW, VH);
+    var tipV = lerp(DEB, FIN, pS);
+    /* la caméra verrouille la pointe */
+    offsetY = clamp(tipV * terH - VH * TIP_SCREEN, 0, Math.max(0, terH - VH));
+    carte.style.transform = "translateY(" + (-offsetY).toFixed(1) + "px)";
+
+    var boost = clamp(vel * 26, 0, 1);           // 0 = repos, 1 = scroll rapide
+    ctx.globalCompositeOperation = "lighter";
+
+    /* -- la fissure principale : trois passes (halo, corps, cœur) -- */
+    var iTip = Math.min(N, Math.floor(tipV * N));
+    var passes = [
+      { wMul: 7.0, alpha: 0.05, col: "#ff5a20" },
+      { wMul: 3.2, alpha: 0.1, col: "#ff7a30" },
+      { wMul: 1.0, alpha: 1.0, col: null },      // cœur : couleur par bandes d'âge
+    ];
+    for (var pa = 0; pa < passes.length; pa++) {
+      var P2 = passes[pa];
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      var seg = 0;
+      while (seg < iTip) {
+        var fin = Math.min(iTip, seg + 46);
+        var vm = chemin[(seg + fin) >> 1].v;
+        var age = clamp((tipV - vm) * 9, 0, 1);                 // 0 pointe -> 1 ancien
+        var scint = 0.82 + 0.18 * Math.sin(t * 2.6 + vm * 90) + boost * 0.25;
+        var largeur = (0.9 + age * 5.2) * (1 + fractal(vm * 70) * 0.25);
+        ctx.beginPath();
+        var deb = true;
+        for (var k = seg; k <= fin; k++) {
+          var pt = versEcran(chemin[k].u + chemin[k].j * 0.004 * (1 - age), chemin[k].v);
+          if (pt.y < -80 || pt.y > VH + 80) { deb = true; continue; }
+          if (deb) { ctx.moveTo(pt.x, pt.y); deb = false; }
+          else ctx.lineTo(pt.x, pt.y);
+        }
+        if (P2.col) {
+          ctx.strokeStyle = P2.col;
+          ctx.globalAlpha = P2.alpha * scint * (0.5 + age * 0.5);
+        } else {
+          /* cœur : blanc-or à la pointe, orange braise en amont, lave qui respire */
+          var chaud = 1 - age;
+          var rr = 255, gg = Math.round(150 + chaud * 90), bb = Math.round(60 + chaud * 130);
+          ctx.strokeStyle = "rgb(" + rr + "," + gg + "," + bb + ")";
+          ctx.globalAlpha = (0.55 + 0.45 * chaud) * scint;
+        }
+        ctx.lineWidth = largeur * P2.wMul;
+        ctx.stroke();
+        seg = fin;
+      }
+    }
+
+    /* -- les branches : chacune se révèle quand la pointe passe son ancre -- */
+    for (var bi = 0; bi < branches.length; bi++) {
+      var br = branches[bi];
+      var prog = clamp((tipV - br.av) / 0.045, 0, 1);
+      if (prog <= 0) continue;
+      var nb = Math.max(2, Math.floor(br.pts.length * smooth(prog)));
+      ctx.beginPath();
+      var d0 = true;
+      for (var k2 = 0; k2 < nb; k2++) {
+        var pt2 = versEcran(br.pts[k2].u, br.pts[k2].v);
+        if (pt2.y < -60 || pt2.y > VH + 60) { d0 = true; continue; }
+        if (d0) { ctx.moveTo(pt2.x, pt2.y); d0 = false; }
+        else ctx.lineTo(pt2.x, pt2.y);
+      }
+      var sc2 = 0.7 + 0.3 * Math.sin(t * 3.1 + bi * 2.2);
+      ctx.strokeStyle = "#ff8a3c";
+      ctx.globalAlpha = 0.55 * sc2 * prog;
+      ctx.lineWidth = 1.5 * br.w * (0.6 + prog);
+      ctx.stroke();
+      ctx.strokeStyle = "#ffd9a0";
+      ctx.globalAlpha = 0.35 * sc2 * prog;
+      ctx.lineWidth = 0.7 * br.w;
+      ctx.stroke();
+    }
+
+    /* -- la pointe : le front vivant -- */
+    var tip = versEcran(chemin[iTip].u, chemin[iTip].v);
+    var pulse = 0.8 + 0.2 * Math.sin(t * 5.2) + boost * 0.8;
+    var gs = 46 * pulse;
+    ctx.globalAlpha = 0.85;
+    ctx.drawImage(spGlow, tip.x - gs / 2, tip.y - gs / 2, gs, gs);
+    ctx.globalAlpha = 1;
+
+    /* -- braises : émission à la pointe, dopée par la vélocité -- */
+    if (!reduceMotion) {
+      var taux = (1.4 + boost * 26) * dt;
+      for (var e = 0; e < taux; e++) {
+        if (Math.random() < taux - e || e < Math.floor(taux)) emitEmber(tip.x, tip.y, boost);
+      }
+      if (Math.random() < 0.5 + boost) {
+        var vr = DEB + Math.random() * Math.max(0.001, tipV - DEB);
+        var ir = Math.floor(vr * N);
+        var ptr = versEcran(chemin[ir].u, chemin[ir].v);
+        if (ptr.y > -20 && ptr.y < VH + 20) emitEmber(ptr.x, ptr.y, boost * 0.4);
+      }
+      for (var ei = embers.length - 1; ei >= 0; ei--) {
+        var em = embers[ei];
+        em.vie -= dt / em.dur;
+        if (em.vie <= 0) { embers.splice(ei, 1); continue; }
+        em.x += (em.vx + Math.sin(t * 2 + em.ph) * 9) * dt;
+        em.y += em.vy * dt;
+        em.vy *= Math.pow(0.6, dt);
+        var s2 = em.r * 3 * (0.4 + em.vie * 0.6);
+        ctx.globalAlpha = em.vie * 0.9;
+        ctx.drawImage(spEmber, em.x - s2 / 2, em.y - s2 / 2, s2, s2);
+      }
+      ctx.globalAlpha = 1;
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  /* ---------- chapitres ---------- */
+  var CHAP = [
+    { el: "ch1", a: 0.0, b: 0.12, mot: "L'étincelle" },
+    { el: "ch2", a: 0.15, b: 0.27, mot: "La méthode · I" },
+    { el: "ch3", a: 0.3, b: 0.42, mot: "La méthode · II" },
+    { el: "ch4", a: 0.45, b: 0.57, mot: "La méthode · III" },
+    { el: "ch5", a: 0.6, b: 0.72, mot: "La promesse" },
+    { el: "ch6", a: 0.75, b: 0.86, mot: "Le prix" },
+    { el: "ch7", a: 0.89, b: 1.001, mot: "Le foyer" },
+  ];
+  CHAP.forEach(function (c) { c.node = document.getElementById(c.el); });
+  var chapMot = document.getElementById("chapMot");
+  var chapIdx = document.getElementById("chapIdx");
+  var railFill = document.getElementById("railFill");
+  var cue = document.getElementById("cue");
+  var chapCur = -1;
+  function fen(x, a, b) {
+    if (x <= a || x >= b) return 0;
+    var u2 = (x - a) / (b - a);
+    return Math.min(smooth(Math.min(1, u2 / 0.24)), smooth(Math.min(1, (1 - u2) / 0.24)));
+  }
+  function majChapitres(x) {
+    for (var i = 0; i < CHAP.length; i++) {
+      var c = CHAP[i];
+      var o = (i === 0 && x < 0.02) ? 1 : fen(x, c.a, c.b);
+      c.node.style.opacity = o.toFixed(3);
+      c.node.style.transform = "translateY(calc(-50% + " + ((1 - o) * 14).toFixed(1) + "px))";
+      c.node.style.pointerEvents = o > 0.55 ? "auto" : "none";
+    }
+    var cur = CHAP.length - 1;
+    for (var k = 0; k < CHAP.length; k++) { if (x < CHAP[k].b) { cur = k; break; } }
+    if (cur !== chapCur) {
+      chapCur = cur;
+      chapMot.classList.add("chg");
+      setTimeout(function () {
+        chapMot.textContent = CHAP[chapCur].mot;
+        chapIdx.textContent = String(chapCur + 1).padStart(2, "0");
+        chapMot.classList.remove("chg");
+      }, 180);
+    }
+    railFill.style.transform = "scaleY(" + x.toFixed(4) + ")";
+    if (cue) cue.style.opacity = x > 0.012 ? "0" : "1";
+  }
+
+  /* ---------- boucle maîtresse ---------- */
+  var last = performance.now();
+  function boucle(now) {
+    requestAnimationFrame(boucle);
+    var dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    var t = now / 1000;
+    pS += (p - pS) * (reduceMotion ? 1 : 0.09);
+    var dv = Math.abs(pS - lastP) / Math.max(dt, 0.001);
+    vel = lerp(vel, dv, 0.12);
+    lastP = pS;
+    dessine(t, dt);
+    majChapitres(pS);
+  }
+  requestAnimationFrame(boucle);
+
+  /* ---------- préloader ---------- */
+  var voile = document.getElementById("voile");
+  function pret() { voile.classList.add("parti"); setTimeout(function () { voile.remove(); }, 1200); }
+  if (carte.complete) pret();
+  else { carte.addEventListener("load", pret); setTimeout(pret, 6000); }
+
+  /* ---------- comparateur ---------- */
+  var cadreur = document.getElementById("cadreur");
+  if (cadreur) {
+    var glisse = false;
+    var pose = function (clientX) {
+      var r = cadreur.getBoundingClientRect();
+      var x = clamp(((clientX - r.left) / r.width) * 100, 2, 98);
+      cadreur.style.setProperty("--cx", x + "%");
+      cadreur.setAttribute("aria-valuenow", Math.round(x));
+    };
+    cadreur.addEventListener("pointerdown", function (e) { glisse = true; pose(e.clientX); e.preventDefault(); });
+    addEventListener("pointermove", function (e) { if (glisse) pose(e.clientX); }, { passive: true });
+    addEventListener("pointerup", function () { glisse = false; });
+    cadreur.addEventListener("keydown", function (e) {
+      var v = parseFloat(getComputedStyle(cadreur).getPropertyValue("--cx")) || 50;
+      if (e.key === "ArrowLeft") cadreur.style.setProperty("--cx", clamp(v - 4, 2, 98) + "%");
+      if (e.key === "ArrowRight") cadreur.style.setProperty("--cx", clamp(v + 4, 2, 98) + "%");
+    });
+    var cvid = document.getElementById("cmpVideo");
+    if (cvid && "IntersectionObserver" in window) {
+      new IntersectionObserver(function (es) {
+        es.forEach(function (en) {
+          if (en.isIntersecting) { cvid.play().catch(function () {}); } else { cvid.pause(); }
+        });
+      }, { threshold: 0.3 }).observe(cvid);
+    }
+  }
+})();
+</script>
+</body>
+</html>
