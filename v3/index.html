@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vesta — Vos photos deviennent des films</title>
+<meta name="description" content="Vesta transforme les photos de vos mandats en films cinématiques en plan séquence. Livré en 48 h. Première vidéo offerte.">
+<meta name="robots" content="noindex"><!-- version test : à retirer au moment de la bascule -->
+<meta name="theme-color" content="#0A0806">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2C13 9 8 11 8 18a8 8 0 0 0 16 0c0-4-2-6-3-9-1 3-2 4-3 5 0-4-1-8-2-12z' fill='%23FF6B35'/%3E%3C/svg%3E">
+
+<!-- Typographie : Fraunces (voix de la marque) + Archivo (interface) + JetBrains Mono (télémétrie) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300&family=Archivo:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<noscript><p class="noscript">Vesta est une expérience interactive — activez JavaScript. La première vidéo est offerte.</p></noscript>
+
+<!-- Braises : canvas plein écran derrière tout -->
+<canvas id="braises" aria-hidden="true"></canvas>
+
+<!-- ================= HEADER ================= -->
+<header class="chrome">
+  <a class="marque" href="#haut">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2C13 9 8 11 8 18a8 8 0 0 0 16 0c0-4-2-6-3-9-1 3-2 4-3 5 0-4-1-8-2-12z" fill="#FF6B35"/></svg>
+    <b>VESTA</b>
+  </a>
+  <nav>
+    <a href="#offres">Prix</a>
+    <a class="cta" href="#foyer">Ma 1<sup>re</sup> vidéo — offerte</a>
+  </nav>
+</header>
+
+<main id="haut">
+
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <p class="slate">Vidéos immobilières par IA</p>
+    <h1>
+      <span class="l"><span>Vos annonces ont des photos.</span></span>
+      <span class="l"><span><em>Vos concurrents ont des films.</em></span></span>
+    </h1>
+    <p class="lead">Vesta transforme les photos de vos mandats en films cinématiques,
+    en plan séquence. Livré en 48 h. Sans drone, sans vidéaste.</p>
+    <p class="reassurance">SANS ENGAGEMENT · SANS CARTE BANCAIRE · PREMIÈRE VIDÉO OFFERTE</p>
+    <div class="cue" aria-hidden="true">
+      <span>SCROLLEZ — REGARDEZ VESTA TRAVAILLER</span>
+      <i></i><i></i>
+    </div>
+  </section>
+
+  <!-- ================= LA FORGE : la démo en temps réel =================
+       Une piste de 430vh ; la scène est sticky ; GSAP scrub la timeline :
+       1. les polaroïds glissent depuis les bords
+       2. ils s'assemblent au centre
+       3. la lueur + les braises les engloutissent (le traitement IA)
+       4. le film prend leur place et se lance                         -->
+  <section id="forge" aria-label="Démonstration : des photos au film">
+    <div class="scene">
+
+      <p class="etape mono" id="etape">LES PHOTOS DE L'AGENT</p>
+
+      <!-- Les 4 polaroïds (cadre blanc élégant) -->
+      <figure class="pola" data-i="0">
+        <img src="assets/photo-1.jpg" alt="Photo de l'entrée du bien" loading="lazy" decoding="async">
+        <figcaption class="mono">ENTRÉE — 01</figcaption>
+      </figure>
+      <figure class="pola" data-i="1">
+        <img src="assets/photo-2.jpg" alt="Photo du séjour" loading="lazy" decoding="async">
+        <figcaption class="mono">SÉJOUR — 02</figcaption>
+      </figure>
+      <figure class="pola" data-i="2">
+        <img src="assets/photo-3.jpg" alt="Photo de la cuisine" loading="lazy" decoding="async">
+        <figcaption class="mono">CUISINE — 03</figcaption>
+      </figure>
+      <figure class="pola" data-i="3">
+        <img src="assets/photo-4.jpg" alt="Photo de la chambre" loading="lazy" decoding="async">
+        <figcaption class="mono">CHAMBRE — 04</figcaption>
+      </figure>
+
+      <!-- La lueur de la forge (le traitement IA) -->
+      <div class="lueur" id="lueur" aria-hidden="true"></div>
+
+      <!-- Le résultat : le film en plan séquence -->
+      <div class="resultat" id="resultat">
+        <video id="film" poster="assets/film_poster.jpg" muted loop playsinline preload="metadata"
+               aria-label="Film immobilier généré par Vesta à partir des quatre photos">
+          <source src="assets/film.mp4" type="video/mp4">
+        </video>
+        <span class="chip mono"><i>●</i>&nbsp;BIEN DE DÉMONSTRATION · PIPELINE RÉEL</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= LA SIGNATURE ================= -->
+  <section class="signature">
+    <h2>Quatre photos. <em>Zéro caméra sur place.</em></h2>
+    <p>Chaque plan démarre de votre photo, pixel pour pixel — le modèle n'anime que la caméra.
+    Relecture humaine sur chaque film, formats portails et réseaux, livré en 48 h.</p>
+  </section>
+
+  <!-- ================= LES OFFRES ================= -->
+  <section id="offres">
+    <p class="slate">Le prix du feu</p>
+    <a class="offre" href="#foyer">
+      <div class="nom">Étincelle<small>La première vidéo, offerte. Jugez sur pièce.</small></div>
+      <div class="prix">0&nbsp;€<small>POUR TOUJOURS</small></div>
+    </a>
+    <a class="offre" href="#foyer">
+      <span class="badge mono">LE CHOIX DES AGENTS</span>
+      <div class="nom">Flamme<small>5 vidéos par mois, sans filigrane, portails et réseaux.</small></div>
+      <div class="prix">29&nbsp;€<small>PAR MOIS</small></div>
+    </a>
+    <a class="offre" href="#foyer">
+      <div class="nom">Brasier<small>Illimité, priorité de rendu, déclinaisons sur mesure.</small></div>
+      <div class="prix">149&nbsp;€<small>PAR MOIS</small></div>
+    </a>
+    <p class="ancrage mono">UN VIDÉASTE : <b>300 À 800 €</b> PAR BIEN, SOUS 2 SEMAINES. VESTA : <b>48 H</b>.</p>
+  </section>
+
+  <!-- ================= LE FOYER (CTA final) ================= -->
+  <section id="foyer">
+    <p class="slate">Le foyer vous attend</p>
+    <h2>La première flamme est <em>offerte.</em></h2>
+    <p class="lead">Envoyez les photos d'un bien de votre vitrine.
+    Film sous 48 h, relu par un œil humain, prêt à diffuser.</p>
+    <a class="btn" href="mailto:contact@vesta.example?subject=Ma%20premi%C3%A8re%20vid%C3%A9o%20offerte">Allumer mon foyer</a>
+  </section>
+
+</main>
+
+<footer class="mono">
+  <span>VESTA © 2026 — CONÇU ET FORGÉ À TOULOUSE</span>
+  <span>PREMIÈRE VIDÉO OFFERTE · LIVRÉ EN 48 H</span>
+</footer>
+
+<!-- GSAP + ScrollTrigger (CDN, versions figées) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
