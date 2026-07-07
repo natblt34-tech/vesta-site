@@ -47,7 +47,7 @@ body::before{content:"";position:fixed;inset:0;z-index:87;pointer-events:none;
 
 /* ============ LES COUCHES DU MONDE ============ */
 #fond{position:fixed;inset:0;z-index:0;width:100vw;height:100vh;object-fit:cover;
-  background:#0A0806;pointer-events:none}
+  background:#0A0806;pointer-events:none;will-change:transform;transform-origin:50% 50%}
 #faille{position:fixed;inset:0;z-index:1;width:100vw;height:100vh;pointer-events:none}
 #piste{height:780vh;position:relative;z-index:2}
 
@@ -398,14 +398,19 @@ footer a:hover{color:var(--ember)}
 
   function majVideo(t) {
     var marge = 0.06;
-    var base = lerp(marge, DUR - marge, pS);
-    /* la respiration : uniquement quand le doigt se pose */
-    var calme = 1 - clamp(vel * 26, 0, 1);
-    var souffle = reduceMotion ? 0 : Math.sin(t * 0.8) * 0.14 * smooth(calme);
-    var cible = clamp(base + souffle, 0.02, DUR - 0.02);
+    var cible = clamp(lerp(marge, DUR - marge, pS), 0.02, DUR - 0.02);
     curT += (cible - curT) * 0.14;
     if (pretV && Math.abs(fond.currentTime - curT) > 1 / 60) {
       try { fond.currentTime = curT; } catch (e) {}
+    }
+    /* Respiration au repos : le TEMPS ne bouge plus (frame stable),
+       c'est l'IMAGE qui respire — micro-zoom + derive en transform GPU,
+       interpole par le compositeur : soyeux quel que soit le framerate. */
+    var calme = smooth(1 - clamp(vel * 26, 0, 1));
+    if (!reduceMotion) {
+      var z = 1 + (0.006 + 0.009 * (0.5 + 0.5 * Math.sin(t * 0.5))) * calme;
+      var dy = Math.sin(t * 0.33) * 5 * calme;
+      fond.style.transform = "scale(" + z.toFixed(4) + ") translateY(" + dy.toFixed(1) + "px)";
     }
   }
 
